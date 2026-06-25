@@ -2,6 +2,13 @@ name: Visual QA
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - codex/web-inspired-apple-ui
+    paths:
+      - "CalTracker/**"
+      - "CalTracker.xcodeproj/**"
+      - ".github/workflows/visual-qa.yml"
 
 jobs:
   screenshots:
