@@ -8,18 +8,20 @@ struct RootView: View {
     @State private var selection: AppTab
     @State private var previousSelection: AppTab = .today
     @State private var showingLog = false
+    private let opensLogOnLaunch: Bool
 
     init() {
 #if DEBUG
         let arguments = ProcessInfo.processInfo.arguments
+        opensLogOnLaunch = arguments.contains("-ui-log")
         if let index = arguments.firstIndex(of: "-ui-tab"), arguments.indices.contains(index + 1) {
             let value = arguments[index + 1]
             _selection = State(initialValue: value == "recipes" ? .recipes : value == "history" ? .history : value == "profile" ? .profile : .today)
         } else {
             _selection = State(initialValue: .today)
         }
-        _showingLog = State(initialValue: arguments.contains("-ui-log"))
 #else
+        opensLogOnLaunch = false
         _selection = State(initialValue: .today)
 #endif
     }
@@ -73,6 +75,11 @@ struct RootView: View {
             .buttonStyle(.plain)
             .padding(.bottom, 42)
             .accessibilityLabel("Registrar comida")
+        }
+        .task {
+            guard opensLogOnLaunch else { return }
+            try? await Task.sleep(for: .milliseconds(500))
+            showingLog = true
         }
     }
 
