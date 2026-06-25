@@ -18,6 +18,7 @@
 		A10000000000000000000110 /* PlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000010 /* PlanView.swift */; };
 		A10000000000000000000111 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000011 /* ProfileView.swift */; };
 		A10000000000000000000112 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000012 /* Assets.xcassets */; };
+		A10000000000000000000113 /* DailySummaryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000015 /* DailySummaryTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -35,10 +36,13 @@
 		A10000000000000000000012 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A10000000000000000000013 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A10000000000000000000014 /* CalTracker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CalTracker.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000000000000000000015 /* DailySummaryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailySummaryTests.swift; sourceTree = "<group>"; };
+		A10000000000000000000016 /* CalTrackerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CalTrackerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		A10000000000000000000201 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		A10000000000000000000204 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -46,6 +50,7 @@
 			isa = PBXGroup;
 			children = (
 				A10000000000000000000302 /* CalTracker */,
+				A10000000000000000000304 /* CalTrackerTests */,
 				A10000000000000000000303 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -72,8 +77,19 @@
 		};
 		A10000000000000000000303 /* Products */ = {
 			isa = PBXGroup;
-			children = (A10000000000000000000014 /* CalTracker.app */);
+			children = (
+				A10000000000000000000014 /* CalTracker.app */,
+				A10000000000000000000016 /* CalTrackerTests.xctest */,
+			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000304 /* CalTrackerTests */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000015 /* DailySummaryTests.swift */,
+			);
+			path = CalTrackerTests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -93,6 +109,21 @@
 			productName = CalTracker;
 			productReference = A10000000000000000000014 /* CalTracker.app */;
 			productType = "com.apple.product-type.application";
+		};
+		A10000000000000000000402 /* CalTrackerTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A10000000000000000000903 /* Build configuration list for PBXNativeTarget "CalTrackerTests" */;
+			buildPhases = (
+				A10000000000000000000205 /* Sources */,
+				A10000000000000000000204 /* Frameworks */,
+				A10000000000000000000206 /* Resources */,
+			);
+			buildRules = ();
+			dependencies = ();
+			name = CalTrackerTests;
+			productName = CalTrackerTests;
+			productReference = A10000000000000000000016 /* CalTrackerTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
 
@@ -114,7 +145,10 @@
 			productRefGroup = A10000000000000000000303 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
-			targets = (A10000000000000000000401 /* CalTracker */);
+			targets = (
+				A10000000000000000000401 /* CalTracker */,
+				A10000000000000000000402 /* CalTrackerTests */,
+			);
 		};
 /* End PBXProject section */
 
@@ -123,6 +157,12 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (A10000000000000000000112 /* Assets.xcassets in Resources */);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A10000000000000000000206 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = ();
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
@@ -143,6 +183,14 @@
 				A10000000000000000000109 /* HistoryView.swift in Sources */,
 				A10000000000000000000110 /* PlanView.swift in Sources */,
 				A10000000000000000000111 /* ProfileView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A10000000000000000000205 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000000000000000000113 /* DailySummaryTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -224,6 +272,36 @@
 			};
 			name = Release;
 		};
+		A10000000000000000000805 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.blulyk.CalTrackerTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CalTracker.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/CalTracker";
+			};
+			name = Debug;
+		};
+		A10000000000000000000806 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.blulyk.CalTrackerTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CalTracker.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/CalTracker";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -236,6 +314,15 @@
 		A10000000000000000000902 /* Build configuration list for PBXNativeTarget "CalTracker" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (A10000000000000000000803 /* Debug */, A10000000000000000000804 /* Release */);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A10000000000000000000903 /* Build configuration list for PBXNativeTarget "CalTrackerTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A10000000000000000000805 /* Debug */,
+				A10000000000000000000806 /* Release */,
+			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
