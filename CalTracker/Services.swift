@@ -75,6 +75,35 @@ enum ServiceError: LocalizedError {
     }
 }
 
+struct BuffetAnalysisResult: Equatable {
+    let calories: Int
+    let protein: Int
+    let carbohydrates: Int
+    let fat: Int
+    let summary: String
+    let modelUsed: String
+
+    private struct Payload: Decodable {
+        let calories: Double
+        let protein: Double
+        let carbohydrates: Double
+        let fat: Double
+        let summary: String
+    }
+
+    static func decode(_ data: Data, modelUsed: String) throws -> BuffetAnalysisResult {
+        let payload = try JSONDecoder().decode(Payload.self, from: data)
+        return BuffetAnalysisResult(
+            calories: Int(payload.calories.rounded()),
+            protein: Int(payload.protein.rounded()),
+            carbohydrates: Int(payload.carbohydrates.rounded()),
+            fat: Int(payload.fat.rounded()),
+            summary: payload.summary,
+            modelUsed: modelUsed
+        )
+    }
+}
+
 actor GeminiService {
     private let models = ["gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-2.0-flash"]
 
@@ -112,15 +141,42 @@ actor GeminiService {
         throw lastError
     }
 
+    func analyzeBuffet(
+        pieces: Int,
+        breakdown: BuffetBreakdown,
+        durationMinutes: Int
+    ) async throws -> BuffetAnalysisResult {
+        guard let key = KeychainStore.geminiKey(), !key.isEmpty else {
+            throw ServiceError.missingAPIKey
+        }
+        let prompt = """
+        Estima la nutrición de una sesión de buffet de sushi y responde únicamente JSON válido, sin markdown:
+        {"calories":0,"protein":0,"carbohydrates":0,"fat":0,"summary":"string"}
+        Datos: \(pieces) piezas totales durante \(durationMinutes) minutos.
+        Desglose: \(breakdown.nigiri) nigiri, \(breakdown.maki) maki, \(breakdown.tempura) tempura, \(breakdown.gyoza) gyoza, \(breakdown.dessert) postres y \(breakdown.other) otras piezas.
+        Usa kcal y gramos enteros, y explica brevemente las principales suposiciones en summary.
+        """
+
+        var lastError: Error = ServiceError.invalidResponse
+        for model in models {
+            do {
+                let data = try await call(model: model, key: key, parts: [["text": prompt]])
+                let json = try cleanedJSONData(from: extractText(data))
+                return try BuffetAnalysisResult.decode(json, modelUsed: model)
+            } catch {
+                lastError = error
+            }
+        }
+        throw lastError
+    }
+
     private func request(model: String, key: String, prompt: String, image: String) async throws -> FoodAnalysis {
         let parts: [[String: Any]] = [
             ["text": prompt],
             ["inline_data": ["mime_type": "image/jpeg", "data": image]]
         ]
         let data = try await call(model: model, key: key, parts: parts)
-        let text = try extractText(data)
-        let cleaned = text.replacingOccurrences(of: "```json", with: "").replacingOccurrences(of: "```", with: "").trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let json = cleaned.data(using: .utf8) else { throw ServiceError.invalidResponse }
+        let json = try cleanedJSONData(from: extractText(data))
         return try JSONDecoder().decode(FoodAnalysis.self, from: json)
     }
 
@@ -155,6 +211,17 @@ actor GeminiService {
             throw ServiceError.invalidResponse
         }
         return text
+    }
+
+    private func cleanedJSONData(from text: String) throws -> Data {
+        let cleaned = text
+            .replacingOccurrences(of: "```json", with: "")
+            .replacingOccurrences(of: "```", with: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let data = cleaned.data(using: .utf8) else {
+            throw ServiceError.invalidResponse
+        }
+        return data
     }
 }
 

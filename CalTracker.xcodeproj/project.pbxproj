@@ -23,6 +23,7 @@
 		A10000000000000000000115 /* FunctionalParityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000018 /* FunctionalParityTests.swift */; };
 		A10000000000000000000116 /* AnalysisDraft.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000019 /* AnalysisDraft.swift */; };
 		A10000000000000000000117 /* MediaStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000020 /* MediaStore.swift */; };
+		A10000000000000000000118 /* BuffetSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000021 /* BuffetSessionView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -46,6 +47,7 @@
 		A10000000000000000000018 /* FunctionalParityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FunctionalParityTests.swift; sourceTree = "<group>"; };
 		A10000000000000000000019 /* AnalysisDraft.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalysisDraft.swift; sourceTree = "<group>"; };
 		A10000000000000000000020 /* MediaStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaStore.swift; sourceTree = "<group>"; };
+		A10000000000000000000021 /* BuffetSessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuffetSessionView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -80,6 +82,7 @@
 				A10000000000000000000017 /* DailySummary.swift */,
 				A10000000000000000000019 /* AnalysisDraft.swift */,
 				A10000000000000000000020 /* MediaStore.swift */,
+				A10000000000000000000021 /* BuffetSessionView.swift */,
 				A10000000000000000000012 /* Assets.xcassets */,
 				A10000000000000000000013 /* Info.plist */,
 			);
@@ -198,6 +201,7 @@
 				A10000000000000000000114 /* DailySummary.swift in Sources */,
 				A10000000000000000000116 /* AnalysisDraft.swift in Sources */,
 				A10000000000000000000117 /* MediaStore.swift in Sources */,
+				A10000000000000000000118 /* BuffetSessionView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

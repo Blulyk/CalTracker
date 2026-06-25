@@ -1,13 +1,17 @@
 import SwiftUI
+import SwiftData
 
 enum AppTab: Hashable {
     case today, recipes, add, history, profile
 }
 
 struct RootView: View {
+    @Query(sort: \BuffetSession.startedAt, order: .reverse) private var buffetSessions: [BuffetSession]
+    @Environment(\.modelContext) private var modelContext
     @State private var selection: AppTab
     @State private var previousSelection: AppTab = .today
     @State private var showingLog = false
+    @State private var presentedBuffet: BuffetSession?
     private let opensLogOnLaunch: Bool
 
     init() {
@@ -28,7 +32,12 @@ struct RootView: View {
 
     var body: some View {
         TabView(selection: $selection) {
-            NavigationStack { TodayView(onAddMeal: openLog) }
+            NavigationStack {
+                TodayView(
+                    onAddMeal: openLog,
+                    onStartBuffet: startBuffet
+                )
+            }
                 .tabItem { Label("Inicio", systemImage: "house.fill") }
                 .tag(AppTab.today)
 
@@ -62,19 +71,15 @@ struct RootView: View {
             NavigationStack { LogView() }
                 .tint(Brand.orange)
         }
+        .fullScreenCover(item: $presentedBuffet) { session in
+            BuffetSessionView(session: session)
+        }
         .overlay(alignment: .bottom) {
-            Button(action: openLog) {
-                Image(systemName: "plus")
-                    .font(.system(size: 23, weight: .bold))
-                    .foregroundStyle(.white)
-                    .frame(width: 58, height: 58)
-                    .background(Brand.blue, in: Circle())
-                    .overlay { Circle().stroke(.white.opacity(0.2), lineWidth: 1) }
-                    .shadow(color: Brand.blue.opacity(0.42), radius: 12, y: 5)
+            if let activeBuffet {
+                activeBuffetBar(activeBuffet)
+                    .padding(.horizontal, 14)
+                    .padding(.bottom, 62)
             }
-            .buttonStyle(.plain)
-            .padding(.bottom, 42)
-            .accessibilityLabel("Registrar comida")
         }
         .task {
             guard opensLogOnLaunch else { return }
@@ -85,5 +90,45 @@ struct RootView: View {
 
     private func openLog() {
         showingLog = true
+    }
+
+    private var activeBuffet: BuffetSession? {
+        buffetSessions.first { $0.completedAt == nil }
+    }
+
+    private func startBuffet() {
+        if let activeBuffet {
+            presentedBuffet = activeBuffet
+        } else {
+            let session = BuffetSession()
+            modelContext.insert(session)
+            presentedBuffet = session
+        }
+    }
+
+    private func activeBuffetBar(_ session: BuffetSession) -> some View {
+        Button {
+            presentedBuffet = session
+        } label: {
+            HStack(spacing: 12) {
+                IconBadge(systemName: "fish.fill", color: Brand.red, size: 38)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Buffet en curso").font(.subheadline.bold()).foregroundStyle(.primary)
+                    TimelineView(.periodic(from: .now, by: 1)) { context in
+                        Text("\(session.totalPieces) piezas · \(durationText(context.date.timeIntervalSince(session.startedAt)))")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+                Spacer()
+                Image(systemName: "chevron.up").foregroundStyle(Brand.red)
+            }
+            .appSurface(tint: Brand.red, interactive: true, padding: 12, radius: 18)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func durationText(_ interval: TimeInterval) -> String {
+        let seconds = max(0, Int(interval))
+        return String(format: "%02d:%02d", seconds / 60, seconds % 60)
     }
 }

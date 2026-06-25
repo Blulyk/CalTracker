@@ -62,10 +62,14 @@ struct AppSurfaceModifier: ViewModifier {
                 .padding(padding)
                 .glassEffect(
                     interactive
-                        ? .regular.tint(tint ?? .clear).interactive()
-                        : .regular.tint(tint ?? .clear),
+                        ? .regular.interactive()
+                        : .regular,
                     in: .rect(cornerRadius: radius)
                 )
+                .overlay {
+                    RoundedRectangle(cornerRadius: radius, style: .continuous)
+                        .stroke((tint ?? Brand.border).opacity(tint == nil ? 1 : 0.45), lineWidth: 1)
+                }
         } else {
             content
                 .padding(padding)
@@ -84,6 +88,76 @@ struct AppSurfaceModifier: ViewModifier {
                     .stroke((tint ?? Brand.border).opacity(tint == nil ? 1 : 0.42), lineWidth: 1)
             }
 #endif
+    }
+}
+
+struct MiniMacroRing: View {
+    let label: String
+    let value: Double
+    let target: Double
+    let color: Color
+
+    private var progress: Double { min(value / max(target, 1), 1) }
+
+    var body: some View {
+        VStack(spacing: 8) {
+            ZStack {
+                Circle().stroke(Brand.border, lineWidth: 5)
+                Circle()
+                    .trim(from: 0, to: progress)
+                    .stroke(color, style: StrokeStyle(lineWidth: 5, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                    .animation(.snappy(duration: 0.45), value: progress)
+                Text("\(Int(value))")
+                    .font(.caption.bold())
+            }
+            .frame(width: 46, height: 46)
+            Text(label.uppercased())
+                .font(.caption2.bold())
+                .foregroundStyle(.secondary)
+            Text("/\(Int(target))g")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(label), \(Int(value)) de \(Int(target)) gramos")
+    }
+}
+
+struct AnimatedWaterBar: View {
+    let value: Int
+    let goal: Int
+    @State private var displayedProgress = 0.0
+
+    private var progress: Double {
+        min(max(Double(value) / Double(max(goal, 1)), 0), 1)
+    }
+
+    var body: some View {
+        GeometryReader { proxy in
+            ZStack(alignment: .leading) {
+                Capsule().fill(Color.primary.opacity(0.08))
+                Capsule()
+                    .fill(
+                        LinearGradient(
+                            colors: [Brand.cyan, Brand.blue, Brand.violet],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .frame(width: proxy.size.width * displayedProgress)
+                    .shadow(color: Brand.cyan.opacity(displayedProgress > 0 ? 0.55 : 0), radius: 9)
+            }
+        }
+        .frame(height: 11)
+        .onAppear { displayedProgress = progress }
+        .onChange(of: progress) { _, newValue in
+            withAnimation(.easeInOut(duration: 0.5)) {
+                displayedProgress = newValue
+            }
+        }
+        .accessibilityLabel("Hidratación \(Int(progress * 100)) por ciento")
     }
 }
 

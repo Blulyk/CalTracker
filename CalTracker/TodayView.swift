@@ -12,7 +12,9 @@ struct TodayView: View {
     @State private var weight = 70.0
     @State private var coachText = ""
     @State private var loadingCoach = false
+    @State private var mealToDelete: MealEntry?
     let onAddMeal: () -> Void
+    let onStartBuffet: () -> Void
 
     private let waterGoal = 2_500
     private var profile: UserProfile? { profiles.first }
@@ -58,6 +60,20 @@ struct TodayView: View {
         }
         .toolbar(.hidden, for: .navigationBar)
         .sheet(isPresented: $showingWeight) { weightSheet }
+        .alert("Eliminar comida", isPresented: Binding(
+            get: { mealToDelete != nil },
+            set: { if !$0 { mealToDelete = nil } }
+        )) {
+            Button("Cancelar", role: .cancel) { mealToDelete = nil }
+            Button("Eliminar", role: .destructive) {
+                guard let meal = mealToDelete else { return }
+                MediaStore.delete(meal.imageFilename)
+                modelContext.delete(meal)
+                mealToDelete = nil
+            }
+        } message: {
+            Text("La comida y su fotografía se eliminarán de este iPhone.")
+        }
     }
 
     private var header: some View {
@@ -123,12 +139,10 @@ struct TodayView: View {
 
             CalorieRing(consumed: summary.calories, goal: Double(targets.calories))
 
-            HStack(spacing: 0) {
-                macroMetric(label: "Carbos", value: summary.carbohydrates, target: targets.carbohydrates, color: Brand.carb)
-                Divider().frame(height: 46)
-                macroMetric(label: "Proteína", value: summary.protein, target: targets.protein, color: Brand.protein)
-                Divider().frame(height: 46)
-                macroMetric(label: "Grasa", value: summary.fat, target: targets.fat, color: Brand.fat)
+            HStack(spacing: 8) {
+                MiniMacroRing(label: "Carbos", value: summary.carbohydrates, target: Double(targets.carbohydrates), color: Brand.carb)
+                MiniMacroRing(label: "Proteína", value: summary.protein, target: Double(targets.protein), color: Brand.protein)
+                MiniMacroRing(label: "Grasa", value: summary.fat, target: Double(targets.fat), color: Brand.fat)
             }
         }
         .appSurface(padding: 18, radius: 28)
@@ -180,9 +194,22 @@ struct TodayView: View {
                         Text("Pedir consejo").frame(maxWidth: .infinity)
                     }
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(Brand.violet.opacity(0.55))
-                .controlSize(.small)
+                .font(.caption.bold())
+                .foregroundStyle(Color(red: 0.68, green: 0.66, blue: 1))
+                .frame(maxWidth: .infinity)
+                .frame(height: 34)
+                .background(
+                    LinearGradient(
+                        colors: [Brand.violet.opacity(0.32), Color(red: 0.35, green: 0.34, blue: 0.84).opacity(0.45)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    in: RoundedRectangle(cornerRadius: 11)
+                )
+                .overlay {
+                    RoundedRectangle(cornerRadius: 11)
+                        .stroke(Brand.violet.opacity(0.35), lineWidth: 1)
+                }
             }
             .frame(maxWidth: .infinity, minHeight: 112, alignment: .leading)
             .appSurface(tint: Brand.violet, padding: 16)
@@ -190,15 +217,15 @@ struct TodayView: View {
     }
 
     private var buffetCard: some View {
-        Button(action: onAddMeal) {
+        Button(action: onStartBuffet) {
             HStack(spacing: 14) {
                 IconBadge(systemName: "takeoutbag.and.cup.and.straw.fill", color: Brand.red, size: 48)
                 VStack(alignment: .leading, spacing: 3) {
                     EyebrowLabel(text: "Sesión buffet", color: Brand.red)
-                    Text("Registrar una comida libre")
+                    Text("Iniciar sesión de buffet")
                         .font(.headline)
                         .foregroundStyle(.primary)
-                    Text("Añade platos conforme los tomas")
+                    Text("Cuenta piezas · IA calcula nutrición")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -229,8 +256,7 @@ struct TodayView: View {
                     .background(Brand.cyan.opacity(0.12), in: Circle())
                     .overlay { Circle().stroke(Brand.cyan.opacity(0.35), lineWidth: 1) }
             }
-            ProgressView(value: Double(summary.waterMilliliters), total: Double(waterGoal))
-                .tint(Brand.cyan)
+            AnimatedWaterBar(value: summary.waterMilliliters, goal: waterGoal)
             HStack(spacing: 12) {
                 Button("-250 ml") { removeWater() }
                     .buttonStyle(.bordered)
@@ -313,17 +339,36 @@ struct TodayView: View {
                             .padding(.bottom, 12)
                             ForEach(Array(entries.enumerated()), id: \.element.id) { index, meal in
                                 if index > 0 { Divider() }
-                                HStack {
+                                HStack(spacing: 12) {
+                                    if let image = MediaStore.image(named: meal.imageFilename) {
+                                        Image(uiImage: image)
+                                            .resizable()
+                                            .scaledToFill()
+                                            .frame(width: 58, height: 58)
+                                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                                    } else {
+                                        IconBadge(systemName: type.icon, color: Brand.orange, size: 46)
+                                    }
                                     VStack(alignment: .leading, spacing: 3) {
                                         Text(meal.name).fontWeight(.semibold)
                                         Text(meal.serving).font(.caption).foregroundStyle(.secondary)
                                     }
                                     Spacer()
-                                    Text("\(Int(meal.calories)) kcal").font(.subheadline)
+                                    VStack(alignment: .trailing, spacing: 7) {
+                                        Text("\(Int(meal.calories)) kcal").font(.subheadline)
+                                        Button(role: .destructive) {
+                                            mealToDelete = meal
+                                        } label: {
+                                            Image(systemName: "trash")
+                                                .font(.caption.bold())
+                                        }
+                                        .buttonStyle(.borderless)
+                                        .accessibilityLabel("Eliminar \(meal.name)")
+                                    }
                                 }
                                 .padding(.vertical, 11)
                                 .contextMenu {
-                                    Button("Eliminar", systemImage: "trash", role: .destructive) { modelContext.delete(meal) }
+                                    Button("Eliminar", systemImage: "trash", role: .destructive) { mealToDelete = meal }
                                 }
                             }
                         }
