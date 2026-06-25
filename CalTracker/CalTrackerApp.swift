@@ -11,7 +11,8 @@ struct CalTrackerApp: App {
             WeightEntry.self,
             Recipe.self,
             MealPlanEntry.self,
-            ShoppingItem.self
+            ShoppingItem.self,
+            BuffetSession.self
         ])
         do {
             return try ModelContainer(for: schema)

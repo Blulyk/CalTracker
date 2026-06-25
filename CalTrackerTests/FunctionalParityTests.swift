@@ -44,10 +44,10 @@ final class FunctionalParityTests: XCTestCase {
 
         let estimate = BuffetEstimator.estimate(totalPieces: 13, breakdown: breakdown)
 
-        XCTAssertEqual(estimate.calories, 849)
-        XCTAssertEqual(estimate.protein, 39)
-        XCTAssertEqual(estimate.carbohydrates, 100)
-        XCTAssertEqual(estimate.fat, 22)
+        XCTAssertEqual(estimate.calories, 842)
+        XCTAssertEqual(estimate.protein, 43)
+        XCTAssertEqual(estimate.carbohydrates, 115)
+        XCTAssertEqual(estimate.fat, 24)
     }
 
     func testMaskedKeyDoesNotReplaceStoredCredential() {

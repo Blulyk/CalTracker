@@ -133,6 +133,12 @@ final class MealEntry {
     var fiber: Double
     var serving: String
     var source: String
+    var imageFilename: String?
+    var foodsJSON: String?
+    var analysisNotes: String?
+    var analysisConfidence: String?
+    var analysisModel: String?
+    var createdAt: Date = Date()
 
     init(name: String, date: Date = .now, mealType: MealType, calories: Double, protein: Double, carbohydrates: Double, fat: Double, fiber: Double = 0, serving: String = "1 ración", source: String = "manual") {
         self.name = name
@@ -145,6 +151,12 @@ final class MealEntry {
         self.fiber = fiber
         self.serving = serving
         self.source = source
+        imageFilename = nil
+        foodsJSON = nil
+        analysisNotes = nil
+        analysisConfidence = nil
+        analysisModel = nil
+        createdAt = .now
     }
 
     var mealType: MealType {
@@ -185,6 +197,10 @@ final class Recipe {
     var ingredientsText: String
     var instructionsText: String
     var createdAt: Date
+    var imageFilename: String?
+    var sourceURL: String?
+    var foodsJSON: String?
+    var fiberPerServing: Double = 0
 
     init(name: String, details: String = "", servings: Int = 1, caloriesPerServing: Double, proteinPerServing: Double, carbsPerServing: Double, fatPerServing: Double, ingredientsText: String, instructionsText: String) {
         self.name = name
@@ -197,6 +213,10 @@ final class Recipe {
         self.ingredientsText = ingredientsText
         self.instructionsText = instructionsText
         createdAt = .now
+        imageFilename = nil
+        sourceURL = nil
+        foodsJSON = nil
+        fiberPerServing = 0
     }
 }
 
@@ -206,17 +226,81 @@ final class MealPlanEntry {
     var mealTypeRaw: String
     var title: String
     var recipeName: String?
+    var recipeIdentifier: String?
+    var servings: Double = 1
 
     init(date: Date, mealType: MealType, title: String, recipeName: String? = nil) {
         self.date = date
         mealTypeRaw = mealType.rawValue
         self.title = title
         self.recipeName = recipeName
+        recipeIdentifier = nil
+        servings = 1
     }
 
     var mealType: MealType {
         get { MealType(rawValue: mealTypeRaw) ?? .lunch }
         set { mealTypeRaw = newValue.rawValue }
+    }
+}
+
+@Model
+final class BuffetSession {
+    var startedAt: Date
+    var completedAt: Date?
+    var totalPieces: Int
+    var nigiri: Int
+    var maki: Int
+    var tempura: Int
+    var gyoza: Int
+    var dessert: Int
+    var other: Int
+    var calories: Int
+    var protein: Int
+    var carbohydrates: Int
+    var fat: Int
+    var usedGemini: Bool
+    var summary: String
+    var savedMealID: String?
+
+    init(startedAt: Date = .now) {
+        self.startedAt = startedAt
+        completedAt = nil
+        totalPieces = 0
+        nigiri = 0
+        maki = 0
+        tempura = 0
+        gyoza = 0
+        dessert = 0
+        other = 0
+        calories = 0
+        protein = 0
+        carbohydrates = 0
+        fat = 0
+        usedGemini = false
+        summary = ""
+        savedMealID = nil
+    }
+
+    var breakdown: BuffetBreakdown {
+        get {
+            BuffetBreakdown(
+                nigiri: nigiri,
+                maki: maki,
+                tempura: tempura,
+                gyoza: gyoza,
+                dessert: dessert,
+                other: other
+            )
+        }
+        set {
+            nigiri = newValue.nigiri
+            maki = newValue.maki
+            tempura = newValue.tempura
+            gyoza = newValue.gyoza
+            dessert = newValue.dessert
+            other = newValue.other
+        }
     }
 }
 
