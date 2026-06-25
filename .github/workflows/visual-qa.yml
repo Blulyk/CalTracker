@@ -67,6 +67,7 @@ jobs:
           }
 
           simctl 180 boot "$SIM"
+          simctl 180 bootstatus "$SIM" -b
           simctl 45 install "$SIM" "$APP"
 
           capture() {
