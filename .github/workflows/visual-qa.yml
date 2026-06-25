@@ -48,34 +48,46 @@ jobs:
           set -euo pipefail
           APP="$(find visual-build/Build/Products/Debug-iphonesimulator -maxdepth 1 -name '*.app' -type d | head -n 1)"
           mkdir -p screenshots
-          xcrun simctl boot "$SIM" || true
-          sleep 25
-          xcrun simctl list devices | grep "$SIM"
-          xcrun simctl ui "$SIM" appearance dark
-          xcrun simctl install "$SIM" "$APP"
+
+          simctl() {
+            python3 - "$@" <<'PY'
+          import subprocess, sys
+          try:
+              result = subprocess.run(["xcrun", "simctl", *sys.argv[1:]], timeout=45)
+              raise SystemExit(result.returncode)
+          except subprocess.TimeoutExpired:
+              print("simctl timed out: " + " ".join(sys.argv[1:]), file=sys.stderr)
+              raise SystemExit(124)
+          PY
+          }
+
+          simctl boot "$SIM" || true
+          sleep 30
+          simctl ui "$SIM" appearance dark
+          simctl install "$SIM" "$APP"
 
           capture() {
             local tab="$1"
             local file="$2"
-            xcrun simctl terminate "$SIM" com.blulyk.CalTracker 2>/dev/null || true
-            xcrun simctl launch "$SIM" com.blulyk.CalTracker -ui-testing -ui-tab "$tab"
+            simctl terminate "$SIM" com.blulyk.CalTracker 2>/dev/null || true
+            simctl launch "$SIM" com.blulyk.CalTracker -ui-testing -ui-tab "$tab"
             sleep 3
-            xcrun simctl io "$SIM" screenshot "screenshots/$file"
+            simctl io "$SIM" screenshot "screenshots/$file"
           }
 
           capture today today.png
           capture recipes recipes.png
           capture history history.png
           capture profile profile.png
-          xcrun simctl terminate "$SIM" com.blulyk.CalTracker 2>/dev/null || true
-          xcrun simctl launch "$SIM" com.blulyk.CalTracker -ui-testing -ui-log
+          simctl terminate "$SIM" com.blulyk.CalTracker 2>/dev/null || true
+          simctl launch "$SIM" com.blulyk.CalTracker -ui-testing -ui-log
           sleep 3
-          xcrun simctl io "$SIM" screenshot screenshots/log.png
-          xcrun simctl terminate "$SIM" com.blulyk.CalTracker 2>/dev/null || true
-          xcrun simctl launch "$SIM" com.blulyk.CalTracker -ui-testing -ui-buffet
+          simctl io "$SIM" screenshot screenshots/log.png
+          simctl terminate "$SIM" com.blulyk.CalTracker 2>/dev/null || true
+          simctl launch "$SIM" com.blulyk.CalTracker -ui-testing -ui-buffet
           sleep 3
-          xcrun simctl io "$SIM" screenshot screenshots/buffet.png
-          xcrun simctl ui "$SIM" appearance light
+          simctl io "$SIM" screenshot screenshots/buffet.png
+          simctl ui "$SIM" appearance light
           capture today today-light.png
 
       - uses: actions/upload-artifact@v6
