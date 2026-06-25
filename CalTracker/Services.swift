@@ -111,7 +111,7 @@ actor GeminiService {
         guard let key = KeychainStore.geminiKey(), !key.isEmpty else { throw ServiceError.missingAPIKey }
         let prompt = """
         Analiza esta comida y responde únicamente JSON válido, sin markdown:
-        {"foods":[{"name":"string","portion":"string","calories":0,"protein":0,"carbs":0,"fat":0,"fiber":0}],"confidence":0.0,"meal_type_suggestion":"Desayuno|Comida|Cena|Snack","notes":"string"}
+        {"foods":[{"name":"string","portion":"string","calories":0,"protein":0,"carbs":0,"fat":0,"fiber":0}],"confidence":"high|medium|low","meal_type_suggestion":"Desayuno|Comida|Cena|Snack","notes":"string"}
         Estima valores realistas. Las calorías son kcal y los macronutrientes gramos.
         """
         guard let encoded = imageData.base64EncodedString().nilIfEmpty else { throw ServiceError.imageEncoding }
@@ -177,7 +177,9 @@ actor GeminiService {
         ]
         let data = try await call(model: model, key: key, parts: parts)
         let json = try cleanedJSONData(from: extractText(data))
-        return try JSONDecoder().decode(FoodAnalysis.self, from: json)
+        var analysis = try JSONDecoder().decode(FoodAnalysis.self, from: json)
+        analysis.modelUsed = model
+        return analysis
     }
 
     private func textRequest(model: String, key: String, prompt: String) async throws -> String {

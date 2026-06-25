@@ -24,6 +24,8 @@
 		A10000000000000000000116 /* AnalysisDraft.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000019 /* AnalysisDraft.swift */; };
 		A10000000000000000000117 /* MediaStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000020 /* MediaStore.swift */; };
 		A10000000000000000000118 /* BuffetSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000021 /* BuffetSessionView.swift */; };
+		A10000000000000000000119 /* AnalysisReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000022 /* AnalysisReviewView.swift */; };
+		A10000000000000000000120 /* RestaurantCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000023 /* RestaurantCatalog.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -48,6 +50,8 @@
 		A10000000000000000000019 /* AnalysisDraft.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalysisDraft.swift; sourceTree = "<group>"; };
 		A10000000000000000000020 /* MediaStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaStore.swift; sourceTree = "<group>"; };
 		A10000000000000000000021 /* BuffetSessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuffetSessionView.swift; sourceTree = "<group>"; };
+		A10000000000000000000022 /* AnalysisReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalysisReviewView.swift; sourceTree = "<group>"; };
+		A10000000000000000000023 /* RestaurantCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestaurantCatalog.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -83,6 +87,8 @@
 				A10000000000000000000019 /* AnalysisDraft.swift */,
 				A10000000000000000000020 /* MediaStore.swift */,
 				A10000000000000000000021 /* BuffetSessionView.swift */,
+				A10000000000000000000022 /* AnalysisReviewView.swift */,
+				A10000000000000000000023 /* RestaurantCatalog.swift */,
 				A10000000000000000000012 /* Assets.xcassets */,
 				A10000000000000000000013 /* Info.plist */,
 			);
@@ -202,6 +208,8 @@
 				A10000000000000000000116 /* AnalysisDraft.swift in Sources */,
 				A10000000000000000000117 /* MediaStore.swift in Sources */,
 				A10000000000000000000118 /* BuffetSessionView.swift in Sources */,
+				A10000000000000000000119 /* AnalysisReviewView.swift in Sources */,
+				A10000000000000000000120 /* RestaurantCatalog.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

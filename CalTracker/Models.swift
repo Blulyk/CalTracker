@@ -336,9 +336,10 @@ struct AnalyzedFood: Codable, Identifiable {
 
 struct FoodAnalysis: Codable {
     let foods: [AnalyzedFood]
-    let confidence: Double?
+    let confidence: AnalysisConfidence?
     let mealTypeSuggestion: String?
     let notes: String?
+    var modelUsed: String? = nil
 
     enum CodingKeys: String, CodingKey {
         case foods, confidence, notes

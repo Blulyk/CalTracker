@@ -12,6 +12,36 @@ enum AnalysisConfidence: String, Codable, CaseIterable {
         default: self = .medium
         }
     }
+
+    init(score: Double) {
+        switch score {
+        case 0.75...: self = .high
+        case 0.5...: self = .medium
+        default: self = .low
+        }
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let score = try? container.decode(Double.self) {
+            self.init(score: score)
+            return
+        }
+        if let value = try? container.decode(String.self) {
+            if let score = Double(value) {
+                self.init(score: score)
+            } else {
+                self.init(serviceValue: value)
+            }
+            return
+        }
+        self = .medium
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
 }
 
 struct DraftFood: Codable, Identifiable, Equatable {
@@ -113,6 +143,28 @@ enum StructuredFoodCodec {
     static func decode(_ value: String?) throws -> [DraftFood] {
         guard let value, !value.isEmpty, let data = value.data(using: .utf8) else { return [] }
         return try JSONDecoder().decode([DraftFood].self, from: data)
+    }
+}
+
+extension MealEntry {
+    convenience init(draft: AnalysisDraft, date: Date = .now) throws {
+        self.init(
+            name: draft.displayName,
+            date: date,
+            mealType: draft.mealType,
+            calories: draft.totalCalories,
+            protein: draft.totalProtein,
+            carbohydrates: draft.totalCarbohydrates,
+            fat: draft.totalFat,
+            fiber: draft.totalFiber,
+            serving: draft.foods.count == 1 ? draft.foods[0].portion : "\(draft.foods.count) alimentos",
+            source: draft.source
+        )
+        imageFilename = draft.imageFilename
+        foodsJSON = try StructuredFoodCodec.encode(draft.foods)
+        analysisNotes = draft.notes
+        analysisConfidence = draft.confidence.rawValue
+        analysisModel = draft.modelUsed
     }
 }
 

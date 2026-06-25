@@ -6,15 +6,23 @@ import AVFoundation
 private enum LogSource: String, CaseIterable, Identifiable {
     case photo = "Foto IA"
     case barcode = "Código"
+    case restaurant = "Restaurante"
     case manual = "Manual"
     var id: String { rawValue }
     var icon: String {
         switch self {
         case .photo: "camera.fill"
         case .barcode: "barcode.viewfinder"
+        case .restaurant: "building.2.fill"
         case .manual: "square.and.pencil"
         }
     }
+}
+
+private struct AnalysisReviewContext: Identifiable {
+    let id = UUID()
+    let draft: AnalysisDraft
+    let image: UIImage?
 }
 
 struct LogView: View {
@@ -30,10 +38,10 @@ struct LogView: View {
     @State private var showingCamera = false
     @State private var photoItem: PhotosPickerItem?
     @State private var isAnalyzing = false
-    @State private var analysis: FoodAnalysis?
+    @State private var reviewContext: AnalysisReviewContext?
     @State private var errorMessage: String?
     @State private var barcode = ""
-    @State private var product: ProductLookup?
+    @State private var restaurantSearch = ""
 
     var body: some View {
         ZStack {
@@ -59,8 +67,6 @@ struct LogView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .appSurface(tint: Brand.red)
                     }
-                    if let analysis { analysisSection(analysis) }
-                    if let product { productSection(product) }
                     recipeSection
                     recentSection
                 }
@@ -78,6 +84,20 @@ struct LogView: View {
             }
         }
         .sheet(isPresented: $showingManual) { ManualMealView(initialType: selectedMealType) }
+        .sheet(item: $reviewContext) { context in
+            AnalysisReviewView(
+                draft: context.draft,
+                image: context.image,
+                onRepeat: {
+                    reviewContext = nil
+                    source = context.image == nil ? source : .photo
+                },
+                onSaved: {
+                    reviewContext = nil
+                    dismiss()
+                }
+            )
+        }
         .sheet(isPresented: $showingScanner) {
             NavigationStack {
                 BarcodeScannerView { code in
@@ -158,6 +178,8 @@ struct LogView: View {
             photoCard
         case .barcode:
             barcodeCard
+        case .restaurant:
+            restaurantCard
         case .manual:
             Button { showingManual = true } label: {
                 VStack(spacing: 14) {
@@ -236,70 +258,49 @@ struct LogView: View {
         .appSurface(tint: Brand.green, padding: 22, radius: 26)
     }
 
-    private func analysisSection(_ result: FoodAnalysis) -> some View {
-        VStack(alignment: .leading, spacing: 13) {
+    private var restaurantCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
             HStack {
-                EyebrowLabel(text: "Resultado IA", color: Brand.violet)
-                Spacer()
-                if let confidence = result.confidence {
-                    Text("\(Int(confidence * 100))% confianza")
-                        .font(.caption.bold())
+                IconBadge(systemName: "building.2.fill", color: Brand.violet, size: 52)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Restaurantes").font(.title3.bold())
+                    Text("Catálogo local, disponible sin conexión")
+                        .font(.caption)
                         .foregroundStyle(.secondary)
                 }
             }
-            ForEach(result.foods) { food in
-                HStack(spacing: 12) {
-                    IconBadge(systemName: "fork.knife", color: Brand.orange, size: 42)
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(food.name).fontWeight(.bold)
-                        Text("\(food.portion) · \(Int(food.calories)) kcal")
-                            .font(.caption).foregroundStyle(.secondary)
+            TextField("Buscar cadena o producto", text: $restaurantSearch)
+                .textFieldStyle(.roundedBorder)
+            ForEach(RestaurantCatalog.search(restaurantSearch)) { item in
+                Button {
+                    var draft = item.draft
+                    draft.mealType = selectedMealType
+                    reviewContext = AnalysisReviewContext(draft: draft, image: nil)
+                } label: {
+                    HStack(spacing: 12) {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(item.name)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(.primary)
+                            Text("\(item.chain) · \(item.serving)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Text("\(Int(item.calories)) kcal")
+                            .font(.subheadline.bold())
+                            .foregroundStyle(Brand.orange)
+                        Image(systemName: "chevron.right")
+                            .font(.caption.bold())
+                            .foregroundStyle(.secondary)
                     }
-                    Spacer()
-                    Button {
-                        addFood(food)
-                    } label: {
-                        Image(systemName: "plus")
-                            .font(.headline.bold())
-                            .frame(width: 38, height: 38)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .buttonBorderShape(.circle)
-                    .tint(Brand.blue)
-                    .accessibilityLabel("Añadir \(food.name)")
+                    .padding(.vertical, 7)
                 }
-            }
-            if let notes = result.notes, !notes.isEmpty {
-                Text(notes).font(.caption).foregroundStyle(.secondary)
+                .buttonStyle(.plain)
+                Divider()
             }
         }
-        .appSurface(tint: Brand.violet)
-    }
-
-    private func productSection(_ item: ProductLookup) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
-            EyebrowLabel(text: "Producto encontrado", color: Brand.green)
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(item.name).font(.headline)
-                    Text(item.serving).font(.caption).foregroundStyle(.secondary)
-                }
-                Spacer()
-                Text("\(Int(item.calories)) kcal").font(.headline).foregroundStyle(Brand.orange)
-            }
-            HStack {
-                MetricChip(label: "P", value: "\(Int(item.protein))g", color: Brand.protein)
-                MetricChip(label: "C", value: "\(Int(item.carbohydrates))g", color: Brand.carb)
-                MetricChip(label: "G", value: "\(Int(item.fat))g", color: Brand.fat)
-            }
-            Button {
-                modelContext.insert(MealEntry(name: item.name, mealType: selectedMealType, calories: item.calories, protein: item.protein, carbohydrates: item.carbohydrates, fat: item.fat, fiber: item.fiber, serving: item.serving, source: "open-food-facts"))
-                product = nil
-            } label: {
-                PrimaryActionLabel(title: "Añadir al día", systemImage: "plus")
-            }
-        }
-        .appSurface(tint: Brand.green)
+        .appSurface(tint: Brand.violet, padding: 18, radius: 26)
     }
 
     private var recipeSection: some View {
@@ -366,10 +367,6 @@ struct LogView: View {
         }
     }
 
-    private func addFood(_ food: AnalyzedFood) {
-        modelContext.insert(MealEntry(name: food.name, mealType: selectedMealType, calories: food.calories, protein: food.protein, carbohydrates: food.carbs, fat: food.fat, fiber: food.fiber ?? 0, serving: food.portion, source: "gemini"))
-    }
-
     private func analyze(_ item: PhotosPickerItem) async {
         isAnalyzing = true
         errorMessage = nil
@@ -396,13 +393,41 @@ struct LogView: View {
 
     private func analyzeImage(_ image: UIImage) async throws {
         guard let jpeg = image.jpegData(compressionQuality: 0.78) else { throw ServiceError.imageEncoding }
-        analysis = try await GeminiService().analyze(imageData: jpeg, profileName: profiles.first?.name)
+        let result = try await GeminiService().analyze(imageData: jpeg, profileName: profiles.first?.name)
+        let suggestedType = result.mealTypeSuggestion.flatMap(MealType.init(rawValue:)) ?? selectedMealType
+        let draft = AnalysisDraft(
+            foods: result.foods.map(DraftFood.init),
+            confidence: result.confidence ?? .medium,
+            modelUsed: result.modelUsed ?? "Gemini",
+            notes: result.notes ?? "",
+            mealType: suggestedType
+        )
+        reviewContext = AnalysisReviewContext(draft: draft, image: image)
     }
 
     private func lookupBarcode() async {
         errorMessage = nil
         do {
-            product = try await OpenFoodFactsService().lookup(barcode: barcode)
+            let product = try await OpenFoodFactsService().lookup(barcode: barcode)
+            let draft = AnalysisDraft(
+                foods: [
+                    DraftFood(
+                        name: product.name,
+                        portion: product.serving,
+                        calories: product.calories,
+                        protein: product.protein,
+                        carbohydrates: product.carbohydrates,
+                        fat: product.fat,
+                        fiber: product.fiber
+                    )
+                ],
+                confidence: .high,
+                modelUsed: "Open Food Facts",
+                notes: "Valores por \(product.serving). Revisa la ración antes de guardar.",
+                mealType: selectedMealType,
+                source: "open-food-facts"
+            )
+            reviewContext = AnalysisReviewContext(draft: draft, image: nil)
         } catch {
             errorMessage = error.localizedDescription
         }
