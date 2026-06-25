@@ -49,7 +49,6 @@ jobs:
           APP="$(find visual-build/Build/Products/Debug-iphonesimulator -maxdepth 1 -name '*.app' -type d | head -n 1)"
           mkdir -p screenshots
           xcrun simctl boot "$SIM" || true
-          open -a Simulator
           xcrun simctl bootstatus "$SIM" -b
           xcrun simctl ui "$SIM" appearance dark
           xcrun simctl install "$SIM" "$APP"
