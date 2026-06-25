@@ -70,9 +70,10 @@ struct HistoryView: View {
                     displayedMonth = calendar.date(byAdding: .month, value: -1, to: displayedMonth) ?? displayedMonth
                 } label: {
                     Image(systemName: "chevron.left").frame(width: 38, height: 38)
+                        .background(Brand.surface, in: RoundedRectangle(cornerRadius: 12))
+                        .overlay { RoundedRectangle(cornerRadius: 12).stroke(Brand.border, lineWidth: 1) }
                 }
-                .buttonStyle(.bordered)
-                .buttonBorderShape(.roundedRectangle(radius: 12))
+                .buttonStyle(.plain)
                 Spacer()
                 Text(displayedMonth, format: .dateTime.month(.wide).year())
                     .font(.headline)
@@ -81,9 +82,10 @@ struct HistoryView: View {
                     displayedMonth = calendar.date(byAdding: .month, value: 1, to: displayedMonth) ?? displayedMonth
                 } label: {
                     Image(systemName: "chevron.right").frame(width: 38, height: 38)
+                        .background(Brand.surface, in: RoundedRectangle(cornerRadius: 12))
+                        .overlay { RoundedRectangle(cornerRadius: 12).stroke(Brand.border, lineWidth: 1) }
                 }
-                .buttonStyle(.bordered)
-                .buttonBorderShape(.roundedRectangle(radius: 12))
+                .buttonStyle(.plain)
                 .disabled(displayedMonth >= Date())
             }
         }

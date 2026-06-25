@@ -18,6 +18,7 @@ struct RootView: View {
         } else {
             _selection = State(initialValue: .today)
         }
+        _showingLog = State(initialValue: arguments.contains("-ui-log"))
 #else
         _selection = State(initialValue: .today)
 #endif
@@ -58,6 +59,20 @@ struct RootView: View {
         .fullScreenCover(isPresented: $showingLog) {
             NavigationStack { LogView() }
                 .tint(Brand.orange)
+        }
+        .overlay(alignment: .bottom) {
+            Button(action: openLog) {
+                Image(systemName: "plus")
+                    .font(.system(size: 23, weight: .bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 58, height: 58)
+                    .background(Brand.blue, in: Circle())
+                    .overlay { Circle().stroke(.white.opacity(0.2), lineWidth: 1) }
+                    .shadow(color: Brand.blue.opacity(0.42), radius: 12, y: 5)
+            }
+            .buttonStyle(.plain)
+            .padding(.bottom, 42)
+            .accessibilityLabel("Registrar comida")
         }
     }
 

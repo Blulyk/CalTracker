@@ -73,6 +73,12 @@ jobs:
           capture recipes recipes.png
           capture history history.png
           capture profile profile.png
+          xcrun simctl terminate "$SIM" com.blulyk.CalTracker 2>/dev/null || true
+          xcrun simctl launch "$SIM" com.blulyk.CalTracker -ui-testing -ui-log
+          sleep 3
+          xcrun simctl io "$SIM" screenshot screenshots/log.png
+          xcrun simctl ui "$SIM" appearance light
+          capture today today-light.png
 
       - uses: actions/upload-artifact@v6
         with:
