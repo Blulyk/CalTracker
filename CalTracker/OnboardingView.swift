@@ -21,82 +21,150 @@ struct OnboardingView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    HStack(spacing: 14) {
-                        Image(systemName: "leaf.circle.fill")
-                            .font(.system(size: 44))
-                            .foregroundStyle(Brand.orange, Brand.blue.opacity(0.18))
-                        VStack(alignment: .leading) {
-                            Text("CalTracker").font(.title.bold())
-                            Text("Tu nutrición, guardada en tu iPhone.")
-                                .foregroundStyle(.secondary)
-                        }
+        ZStack {
+            AppBackground()
+            ScrollView {
+                VStack(spacing: 18) {
+                    brandHeader
+                    identityCard
+                    metricsCard
+                    objectiveCard
+                    geminiCard
+                    if let errorMessage {
+                        Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
+                            .foregroundStyle(Brand.red)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .appSurface(tint: Brand.red)
                     }
-                    .padding(.vertical, 8)
+                    Button(action: createProfile) {
+                        PrimaryActionLabel(title: "Crear perfil local", systemImage: "arrow.right")
+                    }
+                    .disabled(!isValid)
+                    Text("Sin cuenta, sin servidor y sin telemetría.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
-
-                Section("Tu perfil") {
-                    TextField("Nombre", text: $name)
-                        .textContentType(.name)
-                    Stepper("Edad: \(age)", value: $age, in: 13...100)
-                    Picker("Sexo metabólico", selection: $sex) {
-                        ForEach(Sex.allCases) { Text($0.rawValue).tag($0) }
-                    }
-                    LabeledContent("Altura") {
-                        TextField("cm", value: $height, format: .number.precision(.fractionLength(0)))
-                            .keyboardType(.decimalPad)
-                            .multilineTextAlignment(.trailing)
-                        Text("cm").foregroundStyle(.secondary)
-                    }
-                    LabeledContent("Peso actual") {
-                        TextField("kg", value: $weight, format: .number.precision(.fractionLength(1)))
-                            .keyboardType(.decimalPad)
-                            .multilineTextAlignment(.trailing)
-                        Text("kg").foregroundStyle(.secondary)
-                    }
-                    LabeledContent("Peso objetivo") {
-                        TextField("kg", value: $targetWeight, format: .number.precision(.fractionLength(1)))
-                            .keyboardType(.decimalPad)
-                            .multilineTextAlignment(.trailing)
-                        Text("kg").foregroundStyle(.secondary)
-                    }
-                }
-
-                Section("Objetivo") {
-                    Picker("Actividad", selection: $activity) {
-                        ForEach(ActivityLevel.allCases) { Text($0.rawValue).tag($0) }
-                    }
-                    Picker("Meta", selection: $goal) {
-                        ForEach(NutritionGoal.allCases) { Text($0.rawValue).tag($0) }
-                    }
-                }
-
-                Section {
-                    SecureField("Clave de Google Gemini", text: $apiKey)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                } header: {
-                    Text("IA opcional")
-                } footer: {
-                    Text("La clave se guarda en Keychain y solo se envía a Google al usar análisis o coach. Puedes añadirla más tarde.")
-                }
-
-                if let errorMessage {
-                    Text(errorMessage).foregroundStyle(.red)
-                }
-
-                Button {
-                    createProfile()
-                } label: {
-                    Label("Crear perfil local", systemImage: "arrow.right.circle.fill")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
-                .disabled(!isValid)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 24)
             }
-            .navigationTitle("Bienvenido")
+            .scrollIndicators(.hidden)
+        }
+    }
+
+    private var brandHeader: some View {
+        VStack(spacing: 14) {
+            ZStack {
+                Circle().stroke(Brand.blue.opacity(0.2), lineWidth: 10)
+                Circle()
+                    .trim(from: 0, to: 0.72)
+                    .stroke(Brand.blue, style: StrokeStyle(lineWidth: 10, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                Circle()
+                    .trim(from: 0.76, to: 0.92)
+                    .stroke(Brand.orange, style: StrokeStyle(lineWidth: 10, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                Image(systemName: "leaf.fill")
+                    .font(.system(size: 34, weight: .bold))
+                    .foregroundStyle(.white)
+            }
+            .frame(width: 94, height: 94)
+            Text("CalTracker")
+                .font(.system(size: 38, weight: .black, design: .rounded))
+            Text("Tu nutrición, clara y privada.")
+                .font(.headline)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private var identityCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            cardTitle(icon: "person.fill", color: Brand.blue, title: "Tu perfil")
+            TextField("¿Cómo te llamas?", text: $name)
+                .textContentType(.name)
+                .font(.headline)
+                .padding(.horizontal, 14)
+                .frame(height: 50)
+                .background(Brand.elevatedSurface, in: RoundedRectangle(cornerRadius: 14))
+            HStack {
+                Text("Edad").fontWeight(.semibold)
+                Spacer()
+                Stepper("\(age) años", value: $age, in: 13...100)
+                    .fixedSize()
+            }
+            Picker("Sexo metabólico", selection: $sex) {
+                ForEach(Sex.allCases) { Text($0.rawValue).tag($0) }
+            }
+            .pickerStyle(.segmented)
+        }
+        .appSurface()
+    }
+
+    private var metricsCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            cardTitle(icon: "ruler.fill", color: Brand.violet, title: "Métricas corporales")
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                numberField("Altura", value: $height, unit: "cm")
+                numberField("Peso actual", value: $weight, unit: "kg")
+                numberField("Peso objetivo", value: $targetWeight, unit: "kg")
+            }
+        }
+        .appSurface()
+    }
+
+    private var objectiveCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            cardTitle(icon: "target", color: Brand.orange, title: "Tu objetivo")
+            Picker("Meta", selection: $goal) {
+                ForEach(NutritionGoal.allCases) { Text($0.rawValue).tag($0) }
+            }
+            .pickerStyle(.segmented)
+            Picker("Actividad", selection: $activity) {
+                ForEach(ActivityLevel.allCases) { Text($0.rawValue).tag($0) }
+            }
+            .pickerStyle(.menu)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 12)
+            .frame(height: 48)
+            .background(Brand.elevatedSurface, in: RoundedRectangle(cornerRadius: 14))
+        }
+        .appSurface(tint: Brand.orange)
+    }
+
+    private var geminiCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            cardTitle(icon: "sparkles", color: Brand.violet, title: "Gemini, opcional")
+            SecureField("Clave API de Google Gemini", text: $apiKey)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .padding(.horizontal, 14)
+                .frame(height: 48)
+                .background(Brand.elevatedSurface, in: RoundedRectangle(cornerRadius: 14))
+            Text("Puedes omitirla. Se guarda en Keychain y solo se usa al pedir análisis.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .appSurface(tint: Brand.violet)
+    }
+
+    private func cardTitle(icon: String, color: Color, title: String) -> some View {
+        HStack(spacing: 10) {
+            IconBadge(systemName: icon, color: color, size: 36)
+            Text(title).font(.headline)
+        }
+    }
+
+    private func numberField(_ title: String, value: Binding<Double>, unit: String) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title).font(.caption).foregroundStyle(.secondary)
+            HStack {
+                TextField("0", value: value, format: .number.precision(.fractionLength(0...1)))
+                    .keyboardType(.decimalPad)
+                    .fontWeight(.semibold)
+                Text(unit).font(.caption).foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 12)
+            .frame(height: 44)
+            .background(Brand.elevatedSurface, in: RoundedRectangle(cornerRadius: 12))
         }
     }
 

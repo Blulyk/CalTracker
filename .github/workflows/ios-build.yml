@@ -21,3 +21,14 @@ jobs:
             -destination 'generic/platform=iOS Simulator' \
             CODE_SIGNING_ALLOWED=NO \
             build
+      - name: Compile unit tests
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project CalTracker.xcodeproj \
+            -scheme CalTracker \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO \
+            build-for-testing

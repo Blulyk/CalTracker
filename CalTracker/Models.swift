@@ -78,6 +78,7 @@ final class UserProfile {
     var fastingEnabled: Bool
     var fastingStartHour: Int
     var fastingHours: Int
+    var carbCyclingEnabled: Bool = false
     var createdAt: Date
 
     init(
@@ -102,6 +103,7 @@ final class UserProfile {
         fastingEnabled = false
         fastingStartHour = 20
         fastingHours = 16
+        carbCyclingEnabled = false
         createdAt = .now
     }
 
