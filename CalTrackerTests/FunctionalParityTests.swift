@@ -117,4 +117,12 @@ final class FunctionalParityTests: XCTestCase {
         XCTAssertEqual(meal.analysisConfidence, AnalysisConfidence.high.rawValue)
         XCTAssertEqual(try StructuredFoodCodec.decode(meal.foodsJSON), draft.foods)
     }
+
+    func testRestaurantCatalogSearchMatchesChainAndProductName() {
+        let chainMatches = RestaurantCatalog.search("mcdonald")
+        let productMatches = RestaurantCatalog.search("whopper")
+
+        XCTAssertTrue(chainMatches.contains { $0.chain == "McDonald's" })
+        XCTAssertTrue(productMatches.contains { $0.name == "Whopper" })
+    }
 }
