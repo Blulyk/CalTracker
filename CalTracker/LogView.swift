@@ -150,22 +150,26 @@ struct LogView: View {
     }
 
     private var sourceSelector: some View {
-        HStack(spacing: 5) {
-            ForEach(LogSource.allCases) { item in
-                Button {
-                    withAnimation(.snappy) { source = item }
-                    if item == .manual { showingManual = true }
-                } label: {
-                    Label(item.rawValue, systemImage: item.icon)
-                        .font(.caption.weight(.bold))
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 38)
-                        .foregroundStyle(source == item ? .primary : .secondary)
-                        .background(source == item ? Brand.elevatedSurface : .clear, in: RoundedRectangle(cornerRadius: 11))
+        ScrollView(.horizontal) {
+            HStack(spacing: 5) {
+                ForEach(LogSource.allCases) { item in
+                    Button {
+                        withAnimation(.snappy) { source = item }
+                        if item == .manual { showingManual = true }
+                    } label: {
+                        Label(item.rawValue, systemImage: item.icon)
+                            .font(.caption.weight(.bold))
+                            .fixedSize(horizontal: true, vertical: false)
+                            .padding(.horizontal, 13)
+                            .frame(height: 38)
+                            .foregroundStyle(source == item ? .primary : .secondary)
+                            .background(source == item ? Brand.elevatedSurface : .clear, in: RoundedRectangle(cornerRadius: 11))
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
         }
+        .scrollIndicators(.hidden)
         .padding(5)
         .background(Brand.surface, in: RoundedRectangle(cornerRadius: 15))
         .overlay { RoundedRectangle(cornerRadius: 15).stroke(Brand.border, lineWidth: 1) }

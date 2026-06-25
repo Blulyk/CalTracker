@@ -83,10 +83,11 @@ struct BuffetSessionView: View {
             Spacer()
             Button { dismiss() } label: {
                 Image(systemName: "chevron.down")
+                    .foregroundStyle(Brand.red)
                     .frame(width: 42, height: 42)
+                    .appSurface(tint: Brand.red, interactive: true, padding: 0, radius: 21)
             }
-            .buttonStyle(.bordered)
-            .buttonBorderShape(.circle)
+            .buttonStyle(.plain)
         }
     }
 
@@ -117,11 +118,14 @@ struct BuffetSessionView: View {
         Button(action: action) {
             Image(systemName: systemName)
                 .font(.title2.bold())
+                .foregroundStyle(systemName == "plus" ? .white : .primary)
                 .frame(width: 62, height: 62)
+                .background(systemName == "plus" ? Brand.red : Brand.elevatedSurface, in: Circle())
+                .overlay {
+                    Circle().stroke(systemName == "plus" ? Brand.red.opacity(0.45) : Brand.border, lineWidth: 1)
+                }
         }
-        .buttonStyle(.borderedProminent)
-        .buttonBorderShape(.circle)
-        .tint(systemName == "plus" ? Brand.red : Brand.elevatedSurface)
+        .buttonStyle(.plain)
         .disabled(!enabled)
     }
 
@@ -132,12 +136,20 @@ struct BuffetSessionView: View {
                     Text(category.emoji).font(.title)
                     Text(category.title).font(.subheadline.bold())
                     HStack {
-                        Button { adjust(category, by: -1) } label: { Image(systemName: "minus.circle") }
+                        Button { adjust(category, by: -1) } label: {
+                            Image(systemName: "minus.circle")
+                                .foregroundStyle(.secondary)
+                        }
+                            .buttonStyle(.plain)
                             .disabled(value(for: category) == 0)
                         Text("\(value(for: category))")
                             .font(.title3.bold().monospacedDigit())
                             .frame(minWidth: 28)
-                        Button { adjust(category, by: 1) } label: { Image(systemName: "plus.circle.fill") }
+                        Button { adjust(category, by: 1) } label: {
+                            Image(systemName: "plus.circle.fill")
+                                .foregroundStyle(Brand.red)
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
                 .frame(maxWidth: .infinity)

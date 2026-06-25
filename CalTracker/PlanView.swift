@@ -108,11 +108,11 @@ struct PlanView: View {
         Button(action: action) {
             Image(systemName: systemName)
                 .font(.headline.bold())
+                .foregroundStyle(Brand.orange)
                 .frame(width: 40, height: 40)
+                .appSurface(interactive: true, padding: 0, radius: 20)
         }
-        .buttonStyle(.bordered)
-        .buttonBorderShape(.circle)
-        .tint(Brand.orange)
+        .buttonStyle(.plain)
         .accessibilityLabel(label)
     }
 
