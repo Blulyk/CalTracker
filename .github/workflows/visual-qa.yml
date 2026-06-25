@@ -1,0 +1,74 @@
+name: Visual QA
+
+on:
+  workflow_dispatch:
+
+jobs:
+  screenshots:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Select simulator
+        run: |
+          set -euo pipefail
+          xcodebuild -version
+          xcrun simctl list devices available
+          SIM="$(xcrun simctl list devices available -j | python3 -c '
+          import json,sys
+          data=json.load(sys.stdin)["devices"]
+          preferred=("iPhone 16 Pro","iPhone 16","iPhone 15 Pro","iPhone 15")
+          devices=[d for runtime in data.values() for d in runtime if d.get("isAvailable")]
+          for name in preferred:
+              match=next((d for d in devices if d["name"]==name),None)
+              if match:
+                  print(match["udid"])
+                  break
+          else:
+              print(next(d["udid"] for d in devices if d["name"].startswith("iPhone")))
+          ')"
+          echo "SIM=$SIM" >> "$GITHUB_ENV"
+
+      - name: Build debug app
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project CalTracker.xcodeproj \
+            -scheme CalTracker \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath visual-build \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Capture primary screens
+        run: |
+          set -euo pipefail
+          APP="$(find visual-build/Build/Products/Debug-iphonesimulator -maxdepth 1 -name '*.app' -type d | head -n 1)"
+          mkdir -p screenshots
+          xcrun simctl boot "$SIM" || true
+          open -a Simulator
+          xcrun simctl bootstatus "$SIM" -b
+          xcrun simctl ui "$SIM" appearance dark
+          xcrun simctl install "$SIM" "$APP"
+
+          capture() {
+            local tab="$1"
+            local file="$2"
+            xcrun simctl terminate "$SIM" com.blulyk.CalTracker 2>/dev/null || true
+            xcrun simctl launch "$SIM" com.blulyk.CalTracker -ui-testing -ui-tab "$tab"
+            sleep 3
+            xcrun simctl io "$SIM" screenshot "screenshots/$file"
+          }
+
+          capture today today.png
+          capture recipes recipes.png
+          capture history history.png
+          capture profile profile.png
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: CalTracker-visual-qa
+          path: screenshots/*.png
+          if-no-files-found: error
