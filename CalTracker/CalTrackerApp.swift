@@ -36,12 +36,24 @@ struct AppGateView: View {
     @State private var didSeedUITest = false
 
     var body: some View {
-        if profiles.first == nil {
-            OnboardingView()
-                .task { seedUITestDataIfNeeded() }
-        } else {
-            RootView()
+        Group {
+            if profiles.first == nil {
+                OnboardingView()
+                    .task { seedUITestDataIfNeeded() }
+            } else {
+                RootView()
+            }
         }
+        .preferredColorScheme(forcedColorScheme)
+    }
+
+    private var forcedColorScheme: ColorScheme? {
+#if DEBUG
+        let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains("-ui-dark") { return .dark }
+        if arguments.contains("-ui-light") { return .light }
+#endif
+        return nil
     }
 
     private func seedUITestDataIfNeeded() {

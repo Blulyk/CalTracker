@@ -67,14 +67,14 @@ jobs:
           }
 
           simctl 180 boot "$SIM"
-          simctl 45 ui "$SIM" appearance dark
           simctl 45 install "$SIM" "$APP"
 
           capture() {
             local tab="$1"
             local file="$2"
+            local appearance="${3:--ui-dark}"
             simctl 45 terminate "$SIM" com.blulyk.CalTracker 2>/dev/null || true
-            simctl 45 launch "$SIM" com.blulyk.CalTracker -ui-testing -ui-tab "$tab"
+            simctl 45 launch "$SIM" com.blulyk.CalTracker -ui-testing "$appearance" -ui-tab "$tab"
             sleep 3
             simctl 45 io "$SIM" screenshot "screenshots/$file"
           }
@@ -84,15 +84,14 @@ jobs:
           capture history history.png
           capture profile profile.png
           simctl 45 terminate "$SIM" com.blulyk.CalTracker 2>/dev/null || true
-          simctl 45 launch "$SIM" com.blulyk.CalTracker -ui-testing -ui-log
+          simctl 45 launch "$SIM" com.blulyk.CalTracker -ui-testing -ui-dark -ui-log
           sleep 3
           simctl 45 io "$SIM" screenshot screenshots/log.png
           simctl 45 terminate "$SIM" com.blulyk.CalTracker 2>/dev/null || true
-          simctl 45 launch "$SIM" com.blulyk.CalTracker -ui-testing -ui-buffet
+          simctl 45 launch "$SIM" com.blulyk.CalTracker -ui-testing -ui-dark -ui-buffet
           sleep 3
           simctl 45 io "$SIM" screenshot screenshots/buffet.png
-          simctl 45 ui "$SIM" appearance light
-          capture today today-light.png
+          capture today today-light.png -ui-light
 
       - uses: actions/upload-artifact@v6
         with:
