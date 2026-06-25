@@ -4,6 +4,7 @@ import SwiftData
 struct ProfileView: View {
     @Query private var profiles: [UserProfile]
     @Query(sort: \MealEntry.date) private var meals: [MealEntry]
+    @Query private var recipes: [Recipe]
     @Environment(\.modelContext) private var modelContext
     @State private var apiKey = ""
     @State private var keyStatus = ""
@@ -35,7 +36,9 @@ struct ProfileView: View {
         }
         .toolbar(.hidden, for: .navigationBar)
         .onAppear {
-            keyStatus = KeychainStore.geminiKey() == nil ? "No configurada" : "Clave API configurada"
+            let configured = KeychainStore.geminiKey() != nil
+            apiKey = configured ? APIKeyPresentation.mask : ""
+            keyStatus = configured ? "Clave API configurada" : "No configurada"
         }
         .alert("Borrar todos los datos", isPresented: $showingDeleteConfirmation) {
             Button("Cancelar", role: .cancel) {}
@@ -84,7 +87,7 @@ struct ProfileView: View {
                 Button("Guardar") { saveAPIKey() }
                     .buttonStyle(.borderedProminent)
                     .tint(Brand.orange)
-                    .disabled(apiKey.isEmpty)
+                    .disabled(!APIKeyPresentation.shouldSave(apiKey))
             }
         }
         .appSurface()
@@ -233,6 +236,7 @@ struct ProfileView: View {
             if KeychainStore.geminiKey() != nil {
                 Button("Eliminar clave de Gemini", role: .destructive) {
                     KeychainStore.deleteGeminiKey()
+                    apiKey = ""
                     keyStatus = "No configurada"
                 }
                 .buttonStyle(.bordered)
@@ -353,9 +357,10 @@ struct ProfileView: View {
     }
 
     private func saveAPIKey() {
+        guard APIKeyPresentation.shouldSave(apiKey) else { return }
         do {
-            try KeychainStore.saveGeminiKey(apiKey)
-            apiKey = ""
+            try KeychainStore.saveGeminiKey(apiKey.trimmingCharacters(in: .whitespacesAndNewlines))
+            apiKey = APIKeyPresentation.mask
             keyStatus = "Clave API configurada"
         } catch {
             keyStatus = error.localizedDescription
@@ -397,13 +402,18 @@ struct ProfileView: View {
     }
 
     private func eraseAllData() {
+        meals.forEach { MediaStore.delete($0.imageFilename) }
+        recipes.forEach { MediaStore.delete($0.imageFilename) }
         try? modelContext.delete(model: MealEntry.self)
         try? modelContext.delete(model: WaterEntry.self)
         try? modelContext.delete(model: WeightEntry.self)
         try? modelContext.delete(model: Recipe.self)
         try? modelContext.delete(model: MealPlanEntry.self)
         try? modelContext.delete(model: ShoppingItem.self)
+        try? modelContext.delete(model: BuffetSession.self)
         try? modelContext.delete(model: UserProfile.self)
         KeychainStore.deleteGeminiKey()
+        apiKey = ""
+        keyStatus = "No configurada"
     }
 }

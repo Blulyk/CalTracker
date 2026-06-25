@@ -12,10 +12,13 @@ struct HistoryView: View {
     @Query(sort: \MealEntry.date) private var meals: [MealEntry]
     @Query(sort: \WaterEntry.date) private var waterEntries: [WaterEntry]
     @Query(sort: \WeightEntry.date) private var weights: [WeightEntry]
+    @Query(sort: \BuffetSession.startedAt) private var buffetSessions: [BuffetSession]
     @Query private var profiles: [UserProfile]
+    @Environment(\.modelContext) private var modelContext
     @State private var selectedDate = Date()
     @State private var displayedMonth = Date()
     @State private var mode = HistoryMode.calendar
+    @State private var mealToDelete: MealEntry?
 
     private var calendar: Calendar {
         var value = Calendar.current
@@ -48,6 +51,7 @@ struct HistoryView: View {
                         weekChart
                     }
                     daySummary
+                    achievementsCard
                     hydrationCard
                     selectedDayMeals
                     if !weights.isEmpty { weightChart }
@@ -58,6 +62,20 @@ struct HistoryView: View {
             .scrollIndicators(.hidden)
         }
         .toolbar(.hidden, for: .navigationBar)
+        .alert("Eliminar comida", isPresented: Binding(
+            get: { mealToDelete != nil },
+            set: { if !$0 { mealToDelete = nil } }
+        )) {
+            Button("Cancelar", role: .cancel) { mealToDelete = nil }
+            Button("Eliminar", role: .destructive) {
+                guard let meal = mealToDelete else { return }
+                MediaStore.delete(meal.imageFilename)
+                modelContext.delete(meal)
+                mealToDelete = nil
+            }
+        } message: {
+            Text("Se eliminarán la comida y su fotografía local.")
+        }
     }
 
     private var header: some View {
@@ -219,10 +237,27 @@ struct HistoryView: View {
                     .padding(10)
                     .background(Brand.cyan.opacity(0.14), in: Circle())
             }
-            ProgressView(value: Double(selectedSummary.waterMilliliters), total: 2500)
-                .tint(Brand.cyan)
+            AnimatedWaterBar(value: selectedSummary.waterMilliliters, goal: 2_500)
         }
-        .appSurface(tint: Brand.cyan)
+        .appSurface()
+    }
+
+    private var achievementsCard: some View {
+        HStack(spacing: 10) {
+            achievement(value: "\(currentStreak)", label: "Racha", systemName: "flame.fill", color: Brand.orange)
+            achievement(value: "\(hydrationDays)", label: "Hidratación", systemName: "drop.fill", color: Brand.cyan)
+            achievement(value: "\(completedBuffets)", label: "Buffets", systemName: "takeoutbag.and.cup.and.straw.fill", color: Brand.violet)
+        }
+        .appSurface()
+    }
+
+    private func achievement(value: String, label: String, systemName: String, color: Color) -> some View {
+        VStack(spacing: 6) {
+            Image(systemName: systemName).foregroundStyle(color)
+            Text(value).font(.title3.bold())
+            Text(label).font(.caption2).foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
     }
 
     private var selectedDayMeals: some View {
@@ -236,13 +271,31 @@ struct HistoryView: View {
             } else {
                 ForEach(Array(selectedMeals.enumerated()), id: \.element.id) { index, meal in
                     if index > 0 { Divider() }
-                    HStack {
+                    HStack(spacing: 12) {
+                        if let image = MediaStore.image(named: meal.imageFilename) {
+                            Image(uiImage: image)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 54, height: 54)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                        } else {
+                            IconBadge(systemName: meal.mealType.icon, color: Brand.orange, size: 42)
+                        }
                         VStack(alignment: .leading, spacing: 3) {
                             Text(meal.name).fontWeight(.semibold)
                             Text(meal.mealType.rawValue).font(.caption).foregroundStyle(.secondary)
                         }
                         Spacer()
-                        Text("\(Int(meal.calories)) kcal").font(.subheadline.bold())
+                        VStack(alignment: .trailing, spacing: 7) {
+                            Text("\(Int(meal.calories)) kcal").font(.subheadline.bold())
+                            Button(role: .destructive) {
+                                mealToDelete = meal
+                            } label: {
+                                Image(systemName: "trash")
+                                    .font(.caption.bold())
+                            }
+                            .buttonStyle(.borderless)
+                        }
                     }
                     .padding(.vertical, 7)
                 }
@@ -292,5 +345,27 @@ struct HistoryView: View {
             Circle().fill(color).frame(width: 7, height: 7)
             Text(text).font(.caption2).foregroundStyle(.secondary)
         }
+    }
+
+    private var currentStreak: Int {
+        let days = Set(meals.map { calendar.startOfDay(for: $0.date) })
+        var count = 0
+        var cursor = calendar.startOfDay(for: .now)
+        while days.contains(cursor) {
+            count += 1
+            guard let previous = calendar.date(byAdding: .day, value: -1, to: cursor) else { break }
+            cursor = previous
+        }
+        return count
+    }
+
+    private var hydrationDays: Int {
+        let totals = Dictionary(grouping: waterEntries, by: { calendar.startOfDay(for: $0.date) })
+            .mapValues { $0.reduce(0) { $0 + $1.milliliters } }
+        return totals.values.filter { $0 >= 2_500 }.count
+    }
+
+    private var completedBuffets: Int {
+        buffetSessions.filter { $0.completedAt != nil }.count
     }
 }
