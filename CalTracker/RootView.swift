@@ -13,11 +13,13 @@ struct RootView: View {
     @State private var showingLog = false
     @State private var presentedBuffet: BuffetSession?
     private let opensLogOnLaunch: Bool
+    private let opensBuffetOnLaunch: Bool
 
     init() {
 #if DEBUG
         let arguments = ProcessInfo.processInfo.arguments
         opensLogOnLaunch = arguments.contains("-ui-log")
+        opensBuffetOnLaunch = arguments.contains("-ui-buffet")
         if let index = arguments.firstIndex(of: "-ui-tab"), arguments.indices.contains(index + 1) {
             let value = arguments[index + 1]
             _selection = State(initialValue: value == "recipes" ? .recipes : value == "history" ? .history : value == "profile" ? .profile : .today)
@@ -26,6 +28,7 @@ struct RootView: View {
         }
 #else
         opensLogOnLaunch = false
+        opensBuffetOnLaunch = false
         _selection = State(initialValue: .today)
 #endif
     }
@@ -82,9 +85,12 @@ struct RootView: View {
             }
         }
         .task {
-            guard opensLogOnLaunch else { return }
             try? await Task.sleep(for: .milliseconds(500))
-            showingLog = true
+            if opensLogOnLaunch {
+                showingLog = true
+            } else if opensBuffetOnLaunch {
+                startBuffet()
+            }
         }
     }
 
