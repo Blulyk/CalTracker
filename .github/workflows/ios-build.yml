@@ -8,6 +8,7 @@ on:
 jobs:
   build:
     runs-on: macos-26
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
       - name: Build for simulator
@@ -21,7 +22,25 @@ jobs:
             -destination 'generic/platform=iOS Simulator' \
             CODE_SIGNING_ALLOWED=NO \
             build
-      - name: Compile unit tests
+      - name: Select test simulator
+        run: |
+          set -euo pipefail
+          SIM="$(xcrun simctl list devices available -j | python3 -c '
+          import json,sys
+          data=json.load(sys.stdin)["devices"]
+          preferred=("iPhone 17 Pro","iPhone 17","iPhone 16 Pro","iPhone 16")
+          devices=[d for runtime in data.values() for d in runtime if d.get("isAvailable")]
+          for name in preferred:
+              match=next((d for d in devices if d["name"]==name),None)
+              if match:
+                  print(match["udid"])
+                  break
+          else:
+              print(next(d["udid"] for d in devices if d["name"].startswith("iPhone")))
+          ')"
+          echo "TEST_SIM=$SIM" >> "$GITHUB_ENV"
+
+      - name: Run unit tests
         run: |
           set -o pipefail
           xcodebuild \
@@ -29,6 +48,6 @@ jobs:
             -scheme CalTracker \
             -configuration Debug \
             -sdk iphonesimulator \
-            -destination 'generic/platform=iOS Simulator' \
+            -destination "platform=iOS Simulator,id=$TEST_SIM" \
             CODE_SIGNING_ALLOWED=NO \
-            build-for-testing
+            test
