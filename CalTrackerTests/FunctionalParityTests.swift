@@ -56,4 +56,28 @@ final class FunctionalParityTests: XCTestCase {
         XCTAssertFalse(APIKeyPresentation.shouldSave(""))
         XCTAssertTrue(APIKeyPresentation.shouldSave("AIza-new-value"))
     }
+
+    func testBuffetAnalysisDecodesGeminiPayloadAndRecordsModel() throws {
+        let payload = """
+        {
+          "calories": 842,
+          "protein": 43,
+          "carbohydrates": 115,
+          "fat": 24,
+          "summary": "Estimación contextual del buffet."
+        }
+        """.data(using: .utf8)!
+
+        let result = try BuffetAnalysisResult.decode(
+            payload,
+            modelUsed: "gemini-2.5-flash"
+        )
+
+        XCTAssertEqual(result.calories, 842)
+        XCTAssertEqual(result.protein, 43)
+        XCTAssertEqual(result.carbohydrates, 115)
+        XCTAssertEqual(result.fat, 24)
+        XCTAssertEqual(result.summary, "Estimación contextual del buffet.")
+        XCTAssertEqual(result.modelUsed, "gemini-2.5-flash")
+    }
 }
