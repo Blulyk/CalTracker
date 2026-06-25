@@ -52,7 +52,9 @@ struct AppSurfaceModifier: ViewModifier {
     var padding: CGFloat = 16
     var radius: CGFloat = 22
 
+    @ViewBuilder
     func body(content: Content) -> some View {
+#if compiler(>=6.2)
         if #available(iOS 26.0, *) {
             content
                 .padding(padding)
@@ -71,6 +73,15 @@ struct AppSurfaceModifier: ViewModifier {
                         .stroke((tint ?? Brand.border).opacity(tint == nil ? 1 : 0.42), lineWidth: 1)
                 }
         }
+#else
+        content
+            .padding(padding)
+            .background(Brand.surface.opacity(0.96), in: RoundedRectangle(cornerRadius: radius, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: radius, style: .continuous)
+                    .stroke((tint ?? Brand.border).opacity(tint == nil ? 1 : 0.42), lineWidth: 1)
+            }
+#endif
     }
 }
 

@@ -5,9 +5,23 @@ enum AppTab: Hashable {
 }
 
 struct RootView: View {
-    @State private var selection: AppTab = .today
+    @State private var selection: AppTab
     @State private var previousSelection: AppTab = .today
     @State private var showingLog = false
+
+    init() {
+#if DEBUG
+        let arguments = ProcessInfo.processInfo.arguments
+        if let index = arguments.firstIndex(of: "-ui-tab"), arguments.indices.contains(index + 1) {
+            let value = arguments[index + 1]
+            _selection = State(initialValue: value == "recipes" ? .recipes : value == "history" ? .history : value == "profile" ? .profile : .today)
+        } else {
+            _selection = State(initialValue: .today)
+        }
+#else
+        _selection = State(initialValue: .today)
+#endif
+    }
 
     var body: some View {
         TabView(selection: $selection) {
