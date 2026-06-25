@@ -31,11 +31,13 @@ enum Brand {
 }
 
 struct AppBackground: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     var body: some View {
         ZStack {
             Brand.canvas
             RadialGradient(
-                colors: [Brand.orange.opacity(0.07), .clear],
+                colors: [Brand.orange.opacity(colorScheme == .dark ? 0.07 : 0.025), .clear],
                 center: .topTrailing,
                 startRadius: 0,
                 endRadius: 360

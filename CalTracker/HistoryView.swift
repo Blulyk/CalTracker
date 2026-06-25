@@ -86,7 +86,7 @@ struct HistoryView: View {
                         .overlay { RoundedRectangle(cornerRadius: 12).stroke(Brand.border, lineWidth: 1) }
                 }
                 .buttonStyle(.plain)
-                .disabled(displayedMonth >= Date())
+                .disabled(calendar.compare(displayedMonth, to: .now, toGranularity: .month) != .orderedAscending)
             }
         }
         .padding(.top, 10)
