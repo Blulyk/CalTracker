@@ -125,4 +125,40 @@ final class FunctionalParityTests: XCTestCase {
         XCTAssertTrue(chainMatches.contains { $0.chain == "McDonald's" })
         XCTAssertTrue(productMatches.contains { $0.name == "Whopper" })
     }
+
+    func testRecipeImportDraftDecodesGeminiPayload() throws {
+        let payload = """
+        {
+          "name": "Pasta al pesto",
+          "details": "Receta rápida",
+          "servings": 2,
+          "calories_per_serving": 540,
+          "protein_per_serving": 18,
+          "carbs_per_serving": 72,
+          "fat_per_serving": 21,
+          "fiber_per_serving": 6,
+          "ingredients": ["200 g pasta", "40 g pesto"],
+          "instructions": ["Cocer la pasta", "Mezclar con el pesto"]
+        }
+        """.data(using: .utf8)!
+
+        let draft = try JSONDecoder().decode(RecipeImportDraft.self, from: payload)
+
+        XCTAssertEqual(draft.name, "Pasta al pesto")
+        XCTAssertEqual(draft.servings, 2)
+        XCTAssertEqual(draft.ingredientsText, "200 g pasta\n40 g pesto")
+        XCTAssertEqual(draft.instructionsText, "Cocer la pasta\nMezclar con el pesto")
+    }
+
+    func testShoppingSuggestionsDeduplicatePlannedIngredients() {
+        let suggestions = ShoppingListGenerator.suggestions(
+            from: [
+                PlannedIngredients(text: "Tomate\nArroz\nAceite", servings: 2),
+                PlannedIngredients(text: "tomate\nPollo", servings: 1)
+            ]
+        )
+
+        XCTAssertEqual(suggestions.map(\.name), ["Aceite", "Arroz", "Pollo", "Tomate"])
+        XCTAssertEqual(suggestions.first { $0.name == "Tomate" }?.quantity, "3 raciones")
+    }
 }
