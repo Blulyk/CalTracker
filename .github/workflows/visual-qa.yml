@@ -50,44 +50,48 @@ jobs:
           mkdir -p screenshots
 
           simctl() {
-            python3 - "$@" <<'PY'
+            local limit="$1"
+            shift
+            python3 - "$limit" "$@" <<'PY'
           import subprocess, sys
           try:
-              result = subprocess.run(["xcrun", "simctl", *sys.argv[1:]], timeout=45)
+              result = subprocess.run(
+                  ["xcrun", "simctl", *sys.argv[2:]],
+                  timeout=int(sys.argv[1])
+              )
               raise SystemExit(result.returncode)
           except subprocess.TimeoutExpired:
-              print("simctl timed out: " + " ".join(sys.argv[1:]), file=sys.stderr)
+              print("simctl timed out: " + " ".join(sys.argv[2:]), file=sys.stderr)
               raise SystemExit(124)
           PY
           }
 
-          simctl boot "$SIM" || true
-          sleep 30
-          simctl ui "$SIM" appearance dark
-          simctl install "$SIM" "$APP"
+          simctl 180 boot "$SIM"
+          simctl 45 ui "$SIM" appearance dark
+          simctl 45 install "$SIM" "$APP"
 
           capture() {
             local tab="$1"
             local file="$2"
-            simctl terminate "$SIM" com.blulyk.CalTracker 2>/dev/null || true
-            simctl launch "$SIM" com.blulyk.CalTracker -ui-testing -ui-tab "$tab"
+            simctl 45 terminate "$SIM" com.blulyk.CalTracker 2>/dev/null || true
+            simctl 45 launch "$SIM" com.blulyk.CalTracker -ui-testing -ui-tab "$tab"
             sleep 3
-            simctl io "$SIM" screenshot "screenshots/$file"
+            simctl 45 io "$SIM" screenshot "screenshots/$file"
           }
 
           capture today today.png
           capture recipes recipes.png
           capture history history.png
           capture profile profile.png
-          simctl terminate "$SIM" com.blulyk.CalTracker 2>/dev/null || true
-          simctl launch "$SIM" com.blulyk.CalTracker -ui-testing -ui-log
+          simctl 45 terminate "$SIM" com.blulyk.CalTracker 2>/dev/null || true
+          simctl 45 launch "$SIM" com.blulyk.CalTracker -ui-testing -ui-log
           sleep 3
-          simctl io "$SIM" screenshot screenshots/log.png
-          simctl terminate "$SIM" com.blulyk.CalTracker 2>/dev/null || true
-          simctl launch "$SIM" com.blulyk.CalTracker -ui-testing -ui-buffet
+          simctl 45 io "$SIM" screenshot screenshots/log.png
+          simctl 45 terminate "$SIM" com.blulyk.CalTracker 2>/dev/null || true
+          simctl 45 launch "$SIM" com.blulyk.CalTracker -ui-testing -ui-buffet
           sleep 3
-          simctl io "$SIM" screenshot screenshots/buffet.png
-          simctl ui "$SIM" appearance light
+          simctl 45 io "$SIM" screenshot screenshots/buffet.png
+          simctl 45 ui "$SIM" appearance light
           capture today today-light.png
 
       - uses: actions/upload-artifact@v6
