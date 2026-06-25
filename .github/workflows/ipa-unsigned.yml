@@ -1,0 +1,42 @@
+name: SideStore IPA
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-ipa:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v5
+      - name: Build app
+        run: |
+          set -o pipefail
+          rm -rf build unsigned-ipa
+          xcodebuild \
+            -project CalTracker.xcodeproj \
+            -scheme CalTracker \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build
+      - name: Package IPA
+        run: |
+          set -euo pipefail
+          APP_PATH="$(find build/Build/Products/Release-iphoneos -maxdepth 1 -name '*.app' -type d | head -n 1)"
+          test -n "$APP_PATH"
+          plutil -convert xml1 "$APP_PATH/Info.plist"
+          plutil -lint "$APP_PATH/Info.plist"
+          codesign --force --sign - "$APP_PATH"
+          codesign --verify --verbose=4 "$APP_PATH"
+          mkdir -p unsigned-ipa/Payload
+          cp -R "$APP_PATH" unsigned-ipa/Payload/
+          (cd unsigned-ipa && COPYFILE_DISABLE=1 zip -qry CalTracker.ipa Payload)
+          unzip -t unsigned-ipa/CalTracker.ipa
+      - uses: actions/upload-artifact@v6
+        with:
+          name: CalTracker-ipa
+          path: unsigned-ipa/CalTracker.ipa
+          if-no-files-found: error
