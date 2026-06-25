@@ -80,4 +80,41 @@ final class FunctionalParityTests: XCTestCase {
         XCTAssertEqual(result.summary, "Estimación contextual del buffet.")
         XCTAssertEqual(result.modelUsed, "gemini-2.5-flash")
     }
+
+    func testFoodAnalysisAcceptsTextAndNumericConfidence() throws {
+        let textPayload = """
+        {"foods":[],"confidence":"high","meal_type_suggestion":"Comida","notes":""}
+        """.data(using: .utf8)!
+        let numericPayload = """
+        {"foods":[],"confidence":0.45,"meal_type_suggestion":"Snack","notes":""}
+        """.data(using: .utf8)!
+
+        let textResult = try JSONDecoder().decode(FoodAnalysis.self, from: textPayload)
+        let numericResult = try JSONDecoder().decode(FoodAnalysis.self, from: numericPayload)
+
+        XCTAssertEqual(textResult.confidence, .high)
+        XCTAssertEqual(numericResult.confidence, .low)
+    }
+
+    func testDraftCreatesOneMealWithImageAndStructuredFoods() throws {
+        let draft = AnalysisDraft(
+            foods: [
+                DraftFood(name: "Salmón", portion: "150 g", calories: 310, protein: 32, carbohydrates: 0, fat: 19, fiber: 0),
+                DraftFood(name: "Arroz", portion: "180 g", calories: 234, protein: 4.8, carbohydrates: 50.4, fat: 0.5, fiber: 0.7)
+            ],
+            confidence: .high,
+            modelUsed: "gemini-2.5-flash",
+            notes: "Raciones revisadas",
+            imageFilename: "meal-photo.jpg",
+            mealType: .lunch
+        )
+
+        let meal = try MealEntry(draft: draft, date: Date(timeIntervalSince1970: 123))
+
+        XCTAssertEqual(meal.name, "Salmón + Arroz")
+        XCTAssertEqual(meal.calories, 544, accuracy: 0.001)
+        XCTAssertEqual(meal.imageFilename, "meal-photo.jpg")
+        XCTAssertEqual(meal.analysisConfidence, AnalysisConfidence.high.rawValue)
+        XCTAssertEqual(try StructuredFoodCodec.decode(meal.foodsJSON), draft.foods)
+    }
 }
