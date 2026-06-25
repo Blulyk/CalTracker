@@ -19,6 +19,7 @@
 		A10000000000000000000111 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000011 /* ProfileView.swift */; };
 		A10000000000000000000112 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000012 /* Assets.xcassets */; };
 		A10000000000000000000113 /* DailySummaryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000015 /* DailySummaryTests.swift */; };
+		A10000000000000000000114 /* DailySummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000017 /* DailySummary.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -38,6 +39,7 @@
 		A10000000000000000000014 /* CalTracker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CalTracker.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000015 /* DailySummaryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailySummaryTests.swift; sourceTree = "<group>"; };
 		A10000000000000000000016 /* CalTrackerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CalTrackerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000000000000000000017 /* DailySummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailySummary.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -69,6 +71,7 @@
 				A10000000000000000000009 /* HistoryView.swift */,
 				A10000000000000000000010 /* PlanView.swift */,
 				A10000000000000000000011 /* ProfileView.swift */,
+				A10000000000000000000017 /* DailySummary.swift */,
 				A10000000000000000000012 /* Assets.xcassets */,
 				A10000000000000000000013 /* Info.plist */,
 			);
@@ -183,6 +186,7 @@
 				A10000000000000000000109 /* HistoryView.swift in Sources */,
 				A10000000000000000000110 /* PlanView.swift in Sources */,
 				A10000000000000000000111 /* ProfileView.swift in Sources */,
+				A10000000000000000000114 /* DailySummary.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

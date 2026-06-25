@@ -1,29 +1,53 @@
 import SwiftUI
 
 enum AppTab: Hashable {
-    case today, log, history, plan, profile
+    case today, recipes, add, history, profile
 }
 
 struct RootView: View {
     @State private var selection: AppTab = .today
+    @State private var previousSelection: AppTab = .today
+    @State private var showingLog = false
 
     var body: some View {
         TabView(selection: $selection) {
-            NavigationStack { TodayView(onAddMeal: { selection = .log }) }
-                .tabItem { Label("Hoy", systemImage: "circle.grid.2x2.fill") }
+            NavigationStack { TodayView(onAddMeal: openLog) }
+                .tabItem { Label("Inicio", systemImage: "house.fill") }
                 .tag(AppTab.today)
-            NavigationStack { LogView() }
-                .tabItem { Label("Registrar", systemImage: "plus.circle.fill") }
-                .tag(AppTab.log)
-            NavigationStack { HistoryView() }
-                .tabItem { Label("Historial", systemImage: "chart.xyaxis.line") }
-                .tag(AppTab.history)
+
             NavigationStack { PlanView() }
-                .tabItem { Label("Plan", systemImage: "calendar") }
-                .tag(AppTab.plan)
+                .tabItem { Label("Recetas", systemImage: "book.closed.fill") }
+                .tag(AppTab.recipes)
+
+            Color.clear
+                .tabItem { Label("Registrar", systemImage: "plus.circle.fill") }
+                .tag(AppTab.add)
+
+            NavigationStack { HistoryView() }
+                .tabItem { Label("Historial", systemImage: "clock.fill") }
+                .tag(AppTab.history)
+
             NavigationStack { ProfileView() }
-                .tabItem { Label("Perfil", systemImage: "person.crop.circle") }
+                .tabItem { Label("Perfil", systemImage: "person.fill") }
                 .tag(AppTab.profile)
         }
+        .tint(Brand.blue)
+        .onChange(of: selection) { oldValue, newValue in
+            if newValue == .add {
+                previousSelection = oldValue == .add ? .today : oldValue
+                selection = previousSelection
+                showingLog = true
+            } else {
+                previousSelection = newValue
+            }
+        }
+        .fullScreenCover(isPresented: $showingLog) {
+            NavigationStack { LogView() }
+                .tint(Brand.orange)
+        }
+    }
+
+    private func openLog() {
+        showingLog = true
     }
 }
