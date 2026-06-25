@@ -170,6 +170,32 @@ actor GeminiService {
         throw lastError
     }
 
+    func importRecipe(pageText: String, sourceURL: String) async throws -> RecipeImportDraft {
+        guard let key = KeychainStore.geminiKey(), !key.isEmpty else {
+            throw ServiceError.missingAPIKey
+        }
+        let prompt = """
+        Extrae una receta de esta página y responde únicamente JSON válido, sin markdown:
+        {"name":"string","details":"string","servings":1,"calories_per_serving":0,"protein_per_serving":0,"carbs_per_serving":0,"fat_per_serving":0,"fiber_per_serving":0,"ingredients":["string"],"instructions":["string"]}
+        Conserva cantidades y unidades de los ingredientes. Si faltan valores nutricionales, estímales con prudencia.
+        URL: \(sourceURL)
+        CONTENIDO:
+        \(pageText)
+        """
+
+        var lastError: Error = ServiceError.invalidResponse
+        for model in models {
+            do {
+                let data = try await call(model: model, key: key, parts: [["text": prompt]])
+                let json = try cleanedJSONData(from: extractText(data))
+                return try JSONDecoder().decode(RecipeImportDraft.self, from: json)
+            } catch {
+                lastError = error
+            }
+        }
+        throw lastError
+    }
+
     private func request(model: String, key: String, prompt: String, image: String) async throws -> FoodAnalysis {
         let parts: [[String: Any]] = [
             ["text": prompt],
