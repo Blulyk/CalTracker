@@ -1,4 +1,5 @@
 import XCTest
+import SwiftUI
 @testable import CalTracker
 
 final class FunctionalParityTests: XCTestCase {
@@ -160,5 +161,44 @@ final class FunctionalParityTests: XCTestCase {
 
         XCTAssertEqual(suggestions.map(\.name), ["Aceite", "Arroz", "Pollo", "Tomate"])
         XCTAssertEqual(suggestions.first { $0.name == "Tomate" }?.quantity, "3 raciones")
+    }
+
+    func testMealRingLayoutKeepsVisibleGapsBetweenSegments() {
+        let segments = [
+            MealRingSegment(id: .breakfast, label: "Desayuno", calories: 590, color: .orange),
+            MealRingSegment(id: .lunch, label: "Comida", calories: 400, color: .blue)
+        ]
+
+        let slices = MealRingLayout.slices(for: segments, gap: 0.06)
+
+        XCTAssertEqual(slices.count, 2)
+        XCTAssertGreaterThan(slices[1].start - slices[0].end, 0.055)
+        XCTAssertGreaterThan((1 - slices[1].end) + slices[0].start, 0.055)
+    }
+
+    func testMealRingHitTestingSelectsTouchedSegment() {
+        let segments = [
+            MealRingSegment(id: .breakfast, label: "Desayuno", calories: 500, color: .orange),
+            MealRingSegment(id: .lunch, label: "Comida", calories: 500, color: .blue)
+        ]
+        let slices = MealRingLayout.slices(for: segments, gap: 0.06)
+
+        let right = MealRingLayout.segmentID(
+            at: CGPoint(x: 208, y: 110),
+            in: CGSize(width: 220, height: 220),
+            slices: slices,
+            innerRadius: 73,
+            outerRadius: 112
+        )
+        let left = MealRingLayout.segmentID(
+            at: CGPoint(x: 12, y: 110),
+            in: CGSize(width: 220, height: 220),
+            slices: slices,
+            innerRadius: 73,
+            outerRadius: 112
+        )
+
+        XCTAssertEqual(right, .some(.breakfast))
+        XCTAssertEqual(left, .some(.lunch))
     }
 }

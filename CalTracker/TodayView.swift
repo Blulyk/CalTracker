@@ -13,6 +13,8 @@ struct TodayView: View {
     @State private var coachText = ""
     @State private var loadingCoach = false
     @State private var mealToDelete: MealEntry?
+    @State private var selectedMealType: MealType?
+    @State private var showingCoachDetail = false
     let onAddMeal: () -> Void
     let onStartBuffet: () -> Void
 
@@ -58,7 +60,14 @@ struct TodayView: View {
                 .padding(.bottom, 28)
             }
             .scrollIndicators(.hidden)
+
+            if showingCoachDetail {
+                coachDetailOverlay
+                    .transition(.scale(scale: 0.88).combined(with: .opacity))
+                    .zIndex(3)
+            }
         }
+        .animation(.spring(response: 0.34, dampingFraction: 0.84), value: showingCoachDetail)
         .toolbar(.hidden, for: .navigationBar)
         .sheet(isPresented: $showingWeight) { weightSheet }
         .alert("Eliminar comida", isPresented: Binding(
@@ -140,8 +149,9 @@ struct TodayView: View {
 
             SegmentedMealRing(
                 segments: mealSegments,
-                selectedSegment: selectedMealSegment,
-                totalCalories: summary.calories
+                selectedID: selectedMealSegment?.id,
+                totalCalories: summary.calories,
+                onSelect: { selectedMealType = $0 }
             )
 
             if mealSegments.isEmpty {
@@ -151,15 +161,21 @@ struct TodayView: View {
             } else {
                 VStack(spacing: 9) {
                     ForEach(mealSegments) { segment in
-                        HStack(spacing: 7) {
-                            Circle().fill(segment.color).frame(width: 8, height: 8)
-                            Text(segment.label)
-                                .font(.subheadline.weight(.semibold))
-                            Spacer()
-                            Text("\(segment.displayCalories) kcal")
-                                .font(.subheadline.weight(.black))
-                                .foregroundStyle(.secondary)
+                        Button {
+                            selectedMealType = segment.id
+                        } label: {
+                            HStack(spacing: 7) {
+                                Circle().fill(segment.color).frame(width: 8, height: 8)
+                                Text(segment.label)
+                                    .font(.subheadline.weight(.semibold))
+                                Spacer()
+                                Text("\(segment.displayCalories) kcal")
+                                    .font(.subheadline.weight(.black))
+                                    .foregroundStyle(.secondary)
+                            }
+                            .contentShape(Rectangle())
                         }
+                        .buttonStyle(.plain)
                     }
                 }
                 .padding(.horizontal, 18)
@@ -196,7 +212,8 @@ struct TodayView: View {
     }
 
     private var selectedMealSegment: MealRingSegment? {
-        mealSegments.max { $0.calories < $1.calories }
+        guard let selectedMealType else { return nil }
+        return mealSegments.first { $0.id == selectedMealType }
     }
 
     private var mealCountText: String {
@@ -264,6 +281,69 @@ struct TodayView: View {
             }
             .frame(maxWidth: .infinity, minHeight: 112, alignment: .leading)
             .appSurface(tint: Brand.violet, padding: 16)
+            .onLongPressGesture(minimumDuration: 0.35) {
+                showingCoachDetail = true
+            }
+        }
+    }
+
+    private var coachDetailOverlay: some View {
+        ZStack {
+            Color.black.opacity(0.36)
+                .ignoresSafeArea()
+                .onTapGesture { showingCoachDetail = false }
+
+            VStack(alignment: .leading, spacing: 16) {
+                HStack(spacing: 10) {
+                    IconBadge(systemName: "sparkles", color: Brand.violet, size: 42)
+                    VStack(alignment: .leading, spacing: 3) {
+                        EyebrowLabel(text: "Coach IA", color: Brand.violet)
+                        Text("Consejo completo")
+                            .font(.title3.bold())
+                    }
+                    Spacer()
+                    Button {
+                        showingCoachDetail = false
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.headline.weight(.bold))
+                            .frame(width: 34, height: 34)
+                            .background(Brand.elevatedSurface, in: Circle())
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                ScrollView {
+                    Text(coachText.isEmpty ? "Todavia no hay consejo generado. Pulsa Pedir consejo y manten esta tarjeta pulsada para leerlo completo." : coachText)
+                        .font(.body.weight(.medium))
+                        .foregroundStyle(.primary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .textSelection(.enabled)
+                }
+                .frame(maxHeight: 280)
+
+                Button {
+                    showingCoachDetail = false
+                    Task { await askCoach() }
+                } label: {
+                    Label(loadingCoach ? "Generando..." : "Pedir nuevo consejo", systemImage: "sparkles")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 48)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(Brand.violet)
+                .disabled(loadingCoach)
+            }
+            .padding(20)
+            .frame(maxWidth: 360)
+            .background(Brand.surface.opacity(0.98), in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                    .stroke(Brand.violet.opacity(0.38), lineWidth: 1)
+            }
+            .shadow(color: .black.opacity(0.35), radius: 30, y: 16)
+            .padding(.horizontal, 18)
         }
     }
 

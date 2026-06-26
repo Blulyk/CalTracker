@@ -135,13 +135,74 @@ struct MealRingSegment: Identifiable {
     var displayCalories: String { "\(Int(calories.rounded()))" }
 }
 
+struct MealRingSlice {
+    let segment: MealRingSegment
+    let start: CGFloat
+    let end: CGFloat
+}
+
+enum MealRingLayout {
+    static func slices(for segments: [MealRingSegment], gap: CGFloat = 0.06) -> [MealRingSlice] {
+        let visibleSegments = segments.filter { $0.calories > 0 }
+        guard !visibleSegments.isEmpty else { return [] }
+        guard visibleSegments.count > 1 else {
+            return [MealRingSlice(segment: visibleSegments[0], start: 0, end: 1)]
+        }
+
+        let normalizedGap = min(max(gap, 0), 0.12)
+        let totalGap = normalizedGap * CGFloat(visibleSegments.count)
+        let available = max(1 - totalGap, 0.2)
+        let totalCalories = max(visibleSegments.reduce(0) { $0 + $1.calories }, 1)
+        var cursor = normalizedGap / 2
+
+        return visibleSegments.map { segment in
+            let length = CGFloat(segment.calories / totalCalories) * available
+            let slice = MealRingSlice(segment: segment, start: cursor, end: min(cursor + length, 1))
+            cursor = slice.end + normalizedGap
+            return slice
+        }
+    }
+
+    static func segmentID(
+        at point: CGPoint,
+        in size: CGSize,
+        slices: [MealRingSlice],
+        innerRadius: CGFloat,
+        outerRadius: CGFloat
+    ) -> MealType? {
+        guard !slices.isEmpty else { return nil }
+        let center = CGPoint(x: size.width / 2, y: size.height / 2)
+        let dx = point.x - center.x
+        let dy = point.y - center.y
+        let distance = sqrt(dx * dx + dy * dy)
+        guard distance >= innerRadius, distance <= outerRadius else { return nil }
+
+        var turns = (atan2(dy, dx) + (CGFloat.pi / 2)) / (2 * CGFloat.pi)
+        if turns < 0 { turns += 1 }
+
+        return slices.first { turns >= $0.start && turns <= $0.end }?.segment.id
+    }
+}
+
 struct SegmentedMealRing: View {
     let segments: [MealRingSegment]
-    let selectedSegment: MealRingSegment?
+    let selectedID: MealType?
     let totalCalories: Double
+    let onSelect: (MealType) -> Void
 
     private var visibleSegments: [MealRingSegment] {
         segments.filter { $0.calories > 0 }
+    }
+
+    private var selectedSegment: MealRingSegment? {
+        if let selectedID, let match = visibleSegments.first(where: { $0.id == selectedID }) {
+            return match
+        }
+        return nil
+    }
+
+    private var ringSlices: [MealRingSlice] {
+        MealRingLayout.slices(for: visibleSegments)
     }
 
     var body: some View {
@@ -150,15 +211,17 @@ struct SegmentedMealRing: View {
                 .stroke(Color.primary.opacity(0.10), lineWidth: 26)
                 .shadow(color: .black.opacity(0.22), radius: 18, y: 10)
 
-            ForEach(Array(ringSlices.enumerated()), id: \.element.segment.id) { index, slice in
+            ForEach(Array(ringSlices.enumerated()), id: \.element.segment.id) { _, slice in
+                let isSelected = selectedID == slice.segment.id
                 Circle()
                     .trim(from: slice.start, to: slice.end)
                     .stroke(
                         slice.segment.color,
-                        style: StrokeStyle(lineWidth: 26, lineCap: .round)
+                        style: StrokeStyle(lineWidth: isSelected ? 30 : 26, lineCap: .round)
                     )
                     .rotationEffect(.degrees(-90))
-                    .shadow(color: slice.segment.color.opacity(index == 0 ? 0.38 : 0.24), radius: 14)
+                    .shadow(color: slice.segment.color.opacity(isSelected ? 0.48 : 0.24), radius: isSelected ? 18 : 12)
+                    .animation(.snappy(duration: 0.35), value: selectedID?.rawValue)
                     .animation(.snappy(duration: 0.45), value: totalCalories)
             }
 
@@ -190,22 +253,22 @@ struct SegmentedMealRing: View {
             }
         }
         .frame(width: 220, height: 220)
+        .contentShape(Circle())
+        .gesture(
+            DragGesture(minimumDistance: 0)
+                .onEnded { value in
+                    guard let id = MealRingLayout.segmentID(
+                        at: value.location,
+                        in: CGSize(width: 220, height: 220),
+                        slices: ringSlices,
+                        innerRadius: 66,
+                        outerRadius: 116
+                    ) else { return }
+                    onSelect(id)
+                }
+        )
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Distribucion de comidas, \(Int(totalCalories.rounded())) calorias consumidas")
-    }
-
-    private var ringSlices: [(segment: MealRingSegment, start: CGFloat, end: CGFloat)] {
-        let total = max(visibleSegments.reduce(0) { $0 + $1.calories }, 1)
-        let gap: CGFloat = visibleSegments.count > 1 ? 0.018 : 0
-        var cursor: CGFloat = 0
-
-        return visibleSegments.map { segment in
-            let share = CGFloat(segment.calories / total)
-            let start = cursor
-            let end = min(cursor + max(share - gap, 0.02), 1)
-            cursor = min(cursor + share, 1)
-            return (segment, start, end)
-        }
     }
 }
 
@@ -281,9 +344,11 @@ struct AnimatedWaterBar: View {
 
     var body: some View {
         GeometryReader { proxy in
+            let width = proxy.size.width * displayedProgress
+            let visibleWidth = displayedProgress > 0 ? max(width, proxy.size.height) : 0
             ZStack(alignment: .leading) {
                 Capsule().fill(Color.primary.opacity(0.08))
-                Capsule()
+                RoundedRectangle(cornerRadius: proxy.size.height / 2, style: .continuous)
                     .fill(
                         LinearGradient(
                             colors: [Brand.cyan, Brand.blue, Brand.violet],
@@ -291,9 +356,11 @@ struct AnimatedWaterBar: View {
                             endPoint: .trailing
                         )
                     )
-                    .frame(width: proxy.size.width * displayedProgress)
+                    .frame(width: visibleWidth)
+                    .opacity(displayedProgress > 0 ? 1 : 0)
                     .shadow(color: Brand.cyan.opacity(displayedProgress > 0 ? 0.55 : 0), radius: 9)
             }
+            .animation(.easeInOut(duration: 0.5), value: displayedProgress)
         }
         .frame(height: 11)
         .onAppear { displayedProgress = progress }

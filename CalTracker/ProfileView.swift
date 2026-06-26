@@ -89,8 +89,33 @@ struct ProfileView: View {
                     .tint(Brand.orange)
                     .disabled(!APIKeyPresentation.shouldSave(apiKey))
             }
+            VStack(alignment: .leading, spacing: 9) {
+                apiInfoRow("Tipo", value: "Gemini API key")
+                apiInfoRow("Plan", value: "Gratis o pago segun Google AI Studio")
+                apiInfoRow("Uso restante", value: "No disponible desde la app")
+                Link(destination: URL(string: "https://aistudio.google.com/app/apikey")!) {
+                    Label("Ver cuota real en Google AI Studio", systemImage: "arrow.up.right.square")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(Brand.orange)
+                }
+            }
+            .padding(12)
+            .background(Brand.elevatedSurface.opacity(0.72), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay { RoundedRectangle(cornerRadius: 14).stroke(Brand.border, lineWidth: 1) }
         }
         .appSurface()
+    }
+
+    private func apiInfoRow(_ label: String, value: String) -> some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(label)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(.secondary)
+            Spacer()
+            Text(value)
+                .font(.caption.weight(.semibold))
+                .multilineTextAlignment(.trailing)
+        }
     }
 
     private func bodyMetricsCard(_ profile: UserProfile) -> some View {
