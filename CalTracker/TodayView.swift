@@ -47,6 +47,7 @@ struct TodayView: View {
                     WeekStrip(selectedDate: $selectedDate)
                     calorieHeadline
                     balanceCard
+                    macroDistributionSection
                     insightGrid
                     buffetCard
                     hydrationCard
@@ -124,12 +125,12 @@ struct TodayView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     EyebrowLabel(text: "Balance diario", color: .primary)
-                    Text("Objetivo \(targets.calories) kcal")
+                    Text("Distribucion por comidas")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
-                Text("\(Int(summary.progress * 100))%")
+                Text(mealCountText)
                     .font(.headline.bold())
                     .padding(.horizontal, 13)
                     .padding(.vertical, 9)
@@ -137,29 +138,79 @@ struct TodayView: View {
                     .overlay { Capsule().stroke(Brand.border, lineWidth: 1) }
             }
 
-            CalorieRing(consumed: summary.calories, goal: Double(targets.calories))
+            SegmentedMealRing(
+                segments: mealSegments,
+                selectedSegment: selectedMealSegment,
+                totalCalories: summary.calories
+            )
 
-            HStack(spacing: 8) {
-                MiniMacroRing(label: "Carbos", value: summary.carbohydrates, target: Double(targets.carbohydrates), color: Brand.carb)
-                MiniMacroRing(label: "Proteína", value: summary.protein, target: Double(targets.protein), color: Brand.protein)
-                MiniMacroRing(label: "Grasa", value: summary.fat, target: Double(targets.fat), color: Brand.fat)
+            if mealSegments.isEmpty {
+                Text("Registra una comida para ver el anillo diario.")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            } else {
+                VStack(spacing: 9) {
+                    ForEach(mealSegments) { segment in
+                        HStack(spacing: 7) {
+                            Circle().fill(segment.color).frame(width: 8, height: 8)
+                            Text(segment.label)
+                                .font(.subheadline.weight(.semibold))
+                            Spacer()
+                            Text("\(segment.displayCalories) kcal")
+                                .font(.subheadline.weight(.black))
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                .padding(.horizontal, 18)
             }
         }
         .appSurface(padding: 18, radius: 28)
     }
 
-    private func macroMetric(label: String, value: Double, target: Int, color: Color) -> some View {
-        VStack(spacing: 5) {
-            HStack(spacing: 5) {
-                Circle().fill(color).frame(width: 6, height: 6)
-                Text(label.uppercased()).font(.caption2.bold()).foregroundStyle(.secondary)
-            }
-            HStack(alignment: .firstTextBaseline, spacing: 2) {
-                Text("\(Int(value))").font(.title3.bold())
-                Text("/\(target)g").font(.caption2).foregroundStyle(.secondary)
-            }
+    private var macroDistributionSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            EyebrowLabel(text: "Reparto macros", color: .primary)
+            MacroDistributionCard(
+                carbohydrates: summary.carbohydrates,
+                protein: summary.protein,
+                fat: summary.fat
+            )
         }
-        .frame(maxWidth: .infinity)
+        .appSurface(padding: 18, radius: 26)
+    }
+
+    private var mealSegments: [MealRingSegment] {
+        MealType.allCases.compactMap { type in
+            let calories = dayMeals
+                .filter { $0.mealType == type }
+                .reduce(0) { $0 + $1.calories }
+            guard calories > 0 else { return nil }
+            return MealRingSegment(
+                id: type,
+                label: type.rawValue,
+                calories: calories,
+                color: mealColor(for: type)
+            )
+        }
+    }
+
+    private var selectedMealSegment: MealRingSegment? {
+        mealSegments.max { $0.calories < $1.calories }
+    }
+
+    private var mealCountText: String {
+        let count = mealSegments.count
+        return count == 1 ? "1 comida" : "\(count) comidas"
+    }
+
+    private func mealColor(for type: MealType) -> Color {
+        switch type {
+        case .breakfast: return Brand.carb
+        case .lunch: return Brand.blue
+        case .dinner: return Brand.violet
+        case .snack: return Brand.orange
+        }
     }
 
     private var insightGrid: some View {

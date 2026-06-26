@@ -125,6 +125,151 @@ struct MiniMacroRing: View {
     }
 }
 
+
+struct MealRingSegment: Identifiable {
+    let id: MealType
+    let label: String
+    let calories: Double
+    let color: Color
+
+    var displayCalories: String { "\(Int(calories.rounded()))" }
+}
+
+struct SegmentedMealRing: View {
+    let segments: [MealRingSegment]
+    let selectedSegment: MealRingSegment?
+    let totalCalories: Double
+
+    private var visibleSegments: [MealRingSegment] {
+        segments.filter { $0.calories > 0 }
+    }
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .stroke(Color.primary.opacity(0.10), lineWidth: 26)
+                .shadow(color: .black.opacity(0.22), radius: 18, y: 10)
+
+            ForEach(Array(ringSlices.enumerated()), id: \.element.segment.id) { index, slice in
+                Circle()
+                    .trim(from: slice.start, to: slice.end)
+                    .stroke(
+                        slice.segment.color,
+                        style: StrokeStyle(lineWidth: 26, lineCap: .round)
+                    )
+                    .rotationEffect(.degrees(-90))
+                    .shadow(color: slice.segment.color.opacity(index == 0 ? 0.38 : 0.24), radius: 14)
+                    .animation(.snappy(duration: 0.45), value: totalCalories)
+            }
+
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [Color.primary.opacity(0.08), Brand.canvas.opacity(0.86)],
+                        center: .topLeading,
+                        startRadius: 0,
+                        endRadius: 90
+                    )
+                )
+                .padding(38)
+                .overlay {
+                    Circle()
+                        .stroke(Color.primary.opacity(0.07), lineWidth: 1)
+                        .padding(38)
+                }
+
+            VStack(spacing: 4) {
+                Text(selectedSegment?.label.uppercased() ?? "TOTAL")
+                    .font(.caption.weight(.black))
+                    .foregroundStyle(selectedSegment?.color ?? Brand.blue)
+                Text("\(Int((selectedSegment?.calories ?? totalCalories).rounded()))")
+                    .font(.system(size: 42, weight: .black, design: .rounded))
+                Text("kcal")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .frame(width: 220, height: 220)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Distribucion de comidas, \(Int(totalCalories.rounded())) calorias consumidas")
+    }
+
+    private var ringSlices: [(segment: MealRingSegment, start: CGFloat, end: CGFloat)] {
+        let total = max(visibleSegments.reduce(0) { $0 + $1.calories }, 1)
+        let gap: CGFloat = visibleSegments.count > 1 ? 0.018 : 0
+        var cursor: CGFloat = 0
+
+        return visibleSegments.map { segment in
+            let share = CGFloat(segment.calories / total)
+            let start = cursor
+            let end = min(cursor + max(share - gap, 0.02), 1)
+            cursor = min(cursor + share, 1)
+            return (segment, start, end)
+        }
+    }
+}
+
+struct MacroDistributionCard: View {
+    let carbohydrates: Double
+    let protein: Double
+    let fat: Double
+
+    private var total: Double {
+        max(carbohydrates + protein + fat, 1)
+    }
+
+    var body: some View {
+        HStack(spacing: 18) {
+            ZStack {
+                Circle()
+                    .stroke(Color.primary.opacity(0.10), lineWidth: 14)
+                macroSlice(value: carbohydrates, offset: 0, color: Brand.carb)
+                macroSlice(value: protein, offset: carbohydrates / total, color: Brand.protein)
+                macroSlice(value: fat, offset: (carbohydrates + protein) / total, color: Brand.fat)
+            }
+            .frame(width: 86, height: 86)
+            .shadow(color: Brand.carb.opacity(0.18), radius: 14)
+
+            VStack(alignment: .leading, spacing: 10) {
+                MacroDistributionRow(label: "Carbos", value: carbohydrates, total: total, color: Brand.carb)
+                MacroDistributionRow(label: "Proteina", value: protein, total: total, color: Brand.protein)
+                MacroDistributionRow(label: "Grasa", value: fat, total: total, color: Brand.fat)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func macroSlice(value: Double, offset: Double, color: Color) -> some View {
+        Circle()
+            .trim(from: CGFloat(offset), to: CGFloat(offset + value / total))
+            .stroke(color, style: StrokeStyle(lineWidth: 14, lineCap: .round))
+            .rotationEffect(.degrees(-90))
+    }
+}
+
+private struct MacroDistributionRow: View {
+    let label: String
+    let value: Double
+    let total: Double
+    let color: Color
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Circle().fill(color).frame(width: 8, height: 8)
+            Text(label)
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(.secondary)
+            Spacer()
+            Text("\(Int(value.rounded()))g")
+                .font(.subheadline.weight(.black))
+            Text("\(Int((value / total * 100).rounded()))%")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(.secondary)
+                .frame(width: 36, alignment: .trailing)
+        }
+    }
+}
+
 struct AnimatedWaterBar: View {
     let value: Int
     let goal: Int
